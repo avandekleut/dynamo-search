@@ -1,6 +1,4 @@
-export type Flattenable = Record<string, unknown>
-
-export function flattenObject(object: Object): Object {
+export function flattenObject(object: any, separator = '.'): any {
   const toReturn = {}
 
   for (const property in object) {
@@ -16,7 +14,7 @@ export function flattenObject(object: Object): Object {
           continue
         }
 
-        toReturn[property + '.' + subproperty] = flatObject[subproperty]
+        toReturn[property + separator + subproperty] = flatObject[subproperty]
       }
     } else {
       toReturn[property] = object[property]
