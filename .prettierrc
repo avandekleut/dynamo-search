@@ -1,6 +1,8 @@
 {
   "singleQuote": true,
+  "semi": false,
   "trailingComma": "all",
+  "organizeImportsSkipDestructiveCodeActions": true,
   "overrides": [
     {
       "files": ["*.ts", "*.mts"],
