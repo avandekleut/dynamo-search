@@ -9,6 +9,9 @@ node_modules/
 # Coverage
 coverage
 
+# Docker
+docker
+
 # Transpiled files
 dist/
 
