@@ -1,4 +1,4 @@
-import { flattenObject } from '../src/main.js'
+import { flattenObject, flattenObjectRecursively } from '../src/main.js'
 
 describe('flattenObject', () => {
   beforeAll(async () => {
@@ -60,7 +60,9 @@ describe('flattenObject', () => {
     }
     const flattened = flattenObject(obj)
 
-    expect(flattened).toHaveProperty('not_lost')
-    expect(flattened).toHaveProperty('not_lost2')
+    console.log({ flattened })
+
+    expect(flattened).toHaveProperty('not_lost', [])
+    expect(flattened).toHaveProperty('not_lost2', {})
   })
 })

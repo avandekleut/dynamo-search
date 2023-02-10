@@ -1,10 +1,20 @@
-export function flattenObject(
-  object: Object,
-  prefix: string | undefined = undefined,
-  result = null,
-): Object {
-  result = result || {}
+interface FlattenableObject {
+  [x: string]:
+    | FlattenableObject
+    | Array<FlattenableObject>
+    | unknown
+    | Array<unknown>
+}
 
+export function flattenObject(object: FlattenableObject): FlattenableObject {
+  return flattenObjectRecursively(object, undefined, {})
+}
+
+export function flattenObjectRecursively(
+  object: FlattenableObject,
+  prefix: string | undefined = undefined,
+  result: FlattenableObject,
+): FlattenableObject {
   // Preserve empty objects and arrays, they are lost otherwise
   if (prefix && isEmpty(object)) {
     result[prefix] = Array.isArray(object) ? [] : {}
@@ -13,19 +23,21 @@ export function flattenObject(
 
   prefix = prefix ? prefix + '.' : ''
 
-  for (const i in object) {
-    if (Object.prototype.hasOwnProperty.call(object, i)) {
-      if (isRecursivelyFlattenable(object[i])) {
-        flattenObject(object[i], prefix + i, result)
+  for (const key in object) {
+    if (Object.prototype.hasOwnProperty.call(object, key)) {
+      const subObject = object[key]
+
+      if (isRecursivelyFlattenableObject(subObject)) {
+        flattenObjectRecursively(subObject, prefix + key, result)
       } else {
-        result[prefix + i] = object[i]
+        result[prefix + key] = subObject
       }
     }
   }
   return result
 }
 
-function isEmpty(object: Object): boolean {
+function isEmpty(object: unknown): boolean {
   if (
     typeof object === 'object' &&
     object !== null &&
@@ -39,7 +51,9 @@ function isEmpty(object: Object): boolean {
 /**
  * Drops custom classes like Dates, etc
  */
-function isRecursivelyFlattenable(object: Object): boolean {
+function isRecursivelyFlattenableObject(
+  object: unknown,
+): object is FlattenableObject {
   if (
     typeof object === 'object' &&
     (Array.isArray(object) ||
