@@ -1,4 +1,4 @@
-import { flattenObject, flattenObjectRecursively } from '../src/main.js'
+import { flattenObject, typeSafeFlattenObject } from '../src/main.js'
 
 describe('flattenObject', () => {
   beforeAll(async () => {
@@ -17,6 +17,7 @@ describe('flattenObject', () => {
     }
 
     const flattened = flattenObject(objectToFlatten)
+    typeSafeFlattenObject(objectToFlatten)
     expect(flattened).toHaveProperty(['foo.bar'], 'hello world')
   })
 
@@ -26,12 +27,33 @@ describe('flattenObject', () => {
     }
 
     const flattened = flattenObject(objectToFlatten)
+    typeSafeFlattenObject(objectToFlatten)
     expect(flattened).toHaveProperty(['foo.0'], 'hello')
     expect(flattened).toHaveProperty(['foo.1'], 'world')
   })
 
+  it('flattens with empty array', () => {
+    const objectToFlatten = {
+      foo: [],
+    }
+
+    const flattened = flattenObject(objectToFlatten)
+    typeSafeFlattenObject(objectToFlatten)
+    expect(flattened).toHaveProperty(['foo'], [])
+  })
+
+  it('flattens with empty object', () => {
+    const objectToFlatten = {
+      foo: {},
+    }
+
+    const flattened = flattenObject(objectToFlatten)
+    typeSafeFlattenObject(objectToFlatten)
+    expect(flattened).toHaveProperty(['foo'], {})
+  })
+
   it('handles edge cases', () => {
-    const obj = {
+    const objectToFlatten = {
       value: {
         foo: {
           bar: 'yes',
@@ -58,8 +80,7 @@ describe('flattenObject', () => {
         },
       },
     }
-    const flattened = flattenObject(obj)
-
+    const flattened = flattenObject(objectToFlatten)
     console.log({ flattened })
 
     expect(flattened).toHaveProperty('not_lost', [])

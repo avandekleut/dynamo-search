@@ -1,9 +1,19 @@
-interface FlattenableObject {
-  [x: string]:
-    | FlattenableObject
-    | Array<FlattenableObject>
-    | unknown
-    | Array<unknown>
+type FlattenableObject = Record<string, unknown>
+
+/**
+ * TODO: See if we can re-use the DynamoDB types instead of re-creating our own
+ */
+type ScalarType = string | number | null
+
+interface DocumentType {
+  [x: string]: ScalarType | Array<ScalarType | DocumentType> | DocumentType
+}
+
+/**
+ * Rejects objects whose terminal types won't be preserved, such as custom classes
+ */
+export function typeSafeFlattenObject(object: DocumentType): FlattenableObject {
+  return flattenObject(object)
 }
 
 export function flattenObject(object: FlattenableObject): FlattenableObject {
@@ -34,6 +44,7 @@ export function flattenObjectRecursively(
       }
     }
   }
+
   return result
 }
 
