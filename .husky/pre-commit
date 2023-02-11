@@ -2,3 +2,7 @@
 . "$(dirname -- "$0")/_/husky.sh"
 
 npm test
+
+npx sort-package-json
+
+echo "Rank husky pre-commit hook 🫡"
