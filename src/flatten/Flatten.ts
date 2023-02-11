@@ -1,5 +1,5 @@
-import { AnyType } from '../object-inspector'
-import { ObjectInspector } from '../object-inspector/ObjectInspector'
+import { AnyType } from '../obj'
+import { Obj } from '../obj/Obj'
 import { FlattenableObject, FlattenedObject } from './types'
 
 export class Flatten {
@@ -16,23 +16,21 @@ export class Flatten {
     prefix = '',
     result: FlattenedObject,
   ): FlattenedObject {
-    if (prefix && ObjectInspector.isTerminalType(object)) {
-      console.log(`Found terminal object: ${JSON.stringify(object)}`)
+    // Preserve empty objects
+    if (prefix && Obj.isTerminalType(object)) {
       result[prefix] = object
       return result
     }
 
     prefix = prefix ? prefix + '.' : ''
 
-    if (ObjectInspector.isListType(object)) {
+    if (Obj.isListType(object)) {
       for (let key = 0; key < object.length; key++) {
-        if (Object.prototype.hasOwnProperty.call(object, key)) {
-          Flatten.flattenRecursively(object[key], prefix + key, result)
-        }
+        Flatten.flattenRecursively(object[key], prefix + key, result)
       }
     }
 
-    if (ObjectInspector.isMapType(object)) {
+    if (Obj.isMapType(object)) {
       for (const key in object) {
         if (Object.prototype.hasOwnProperty.call(object, key)) {
           Flatten.flattenRecursively(object[key], prefix + key, result)

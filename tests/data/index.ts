@@ -1,3 +1,12 @@
+import { FlattenedObject } from '../../src/flatten'
+
+export const smallFlatObject: FlattenedObject = {
+  string: '',
+  number: 0,
+  null: null,
+  boolean: true,
+}
+
 export const largeObjectWithDotsInAttributeNames = {
   value: {
     foo: {

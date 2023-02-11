@@ -1,4 +1,4 @@
-import { TerminalType } from '../object-inspector'
+import { TerminalType } from '../obj'
 
 export interface FlattenableObject {
   [attributeName: string]:
