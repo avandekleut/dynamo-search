@@ -21,20 +21,20 @@ export class Obj {
   }
 
   static isEmpty(object: unknown): object is EmptyType {
-    if (Obj.isEmptyArray(object) || Obj.isEmptyObject(object)) {
+    if (Obj.isEmptyList(object) || Obj.isEmptyMap(object)) {
       return true
     }
     return false
   }
 
-  static isEmptyArray(object: unknown): object is EmptyArray {
+  static isEmptyList(object: unknown): object is EmptyArray {
     if (Obj.isListType(object) && Object.keys(object).length === 0) {
       return true
     }
     return false
   }
 
-  static isEmptyObject(object: unknown): object is EmptyObject {
+  static isEmptyMap(object: unknown): object is EmptyObject {
     if (Obj.isMapType(object) && Object.keys(object).length === 0) {
       return true
     }

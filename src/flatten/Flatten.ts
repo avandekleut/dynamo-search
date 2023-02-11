@@ -1,5 +1,4 @@
-import { AnyType } from '../obj'
-import { Obj } from '../obj/Obj'
+import { AnyType, Obj } from '../obj'
 import { FlattenableObject, FlattenedObject } from './types'
 
 export class Flatten {

@@ -1,6 +1,4 @@
-import { FlattenedObject } from '../../src/flatten'
-
-export const smallFlatObject: FlattenedObject = {
+export const smallFlatObject = {
   string: '',
   number: 0,
   null: null,
