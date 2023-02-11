@@ -35,17 +35,55 @@ export class PropertyGenerator {
     }
 
     if (PropertyGenerator.isNumber(obj)) {
-      inferredArbitraries.push(PropertyGenerator.inferNumber(obj, config))
+      const inferredNumberArbitrary = PropertyGenerator.inferNumber(obj, config)
+      if (inferredNumberArbitrary) {
+        inferredArbitraries.push(inferredNumberArbitrary)
+      }
     }
 
     if (PropertyGenerator.isString(obj)) {
-      inferredArbitraries.push(PropertyGenerator.inferString(obj, config))
+      const inferredStringArbitrary = PropertyGenerator.inferString(obj, config)
+      if (inferredStringArbitrary) {
+        inferredArbitraries.push(inferredStringArbitrary)
+      }
+    }
+
+    if (PropertyGenerator.isFunction(obj)) {
+      const inferredFunctionArbitrary = PropertyGenerator.inferFunction(obj)
+      if (inferredFunctionArbitrary) {
+        inferredArbitraries.push(inferredFunctionArbitrary)
+      }
     }
 
     return fc.oneof(...inferredArbitraries) as fc.Arbitrary<T>
   }
 
-  static inferFunc<T>(
+  static inferFunction(
+    obj: GenericFunction,
+  ): fc.Arbitrary<GenericFunction> | undefined {
+    const inferredArbitraries: Array<fc.Arbitrary<GenericFunction>> = []
+
+    if (PropertyGenerator.isBooleanCompareFunction(obj)) {
+      inferredArbitraries.push(fc.compareBooleanFunc())
+    }
+
+    if (PropertyGenerator.isNumericCompareFunction(obj)) {
+      inferredArbitraries.push(fc.compareFunc())
+    }
+
+    const inferredGeneratorFunc = PropertyGenerator.inferGeneratorFunc(obj)
+    if (inferredGeneratorFunc) {
+      inferredArbitraries.push(inferredGeneratorFunc)
+    }
+
+    if (inferredArbitraries.length === 0) {
+      return undefined
+    }
+
+    return fc.oneof(...inferredArbitraries)
+  }
+
+  static inferGeneratorFunc<T>(
     obj: GenericFunction,
   ): fc.Arbitrary<GeneratorFunc<T>> | undefined {
     try {
@@ -57,7 +95,9 @@ export class PropertyGenerator {
     }
   }
 
-  static isCompareFunc(obj: GenericFunction): obj is NumericCompareFunc {
+  static isNumericCompareFunction(
+    obj: GenericFunction,
+  ): obj is NumericCompareFunc {
     try {
       return PropertyGenerator.isNumber(obj(0, 1))
     } catch (err) {
@@ -65,7 +105,9 @@ export class PropertyGenerator {
     }
   }
 
-  static isBooleanCompareFunc(obj: GenericFunction): obj is BooleanCompareFunc {
+  static isBooleanCompareFunction(
+    obj: GenericFunction,
+  ): obj is BooleanCompareFunc {
     try {
       return PropertyGenerator.isBoolean(obj(0, 1))
     } catch (err) {
@@ -92,7 +134,7 @@ export class PropertyGenerator {
   static inferString(
     obj: string,
     config?: InferStringConfig,
-  ): fc.Arbitrary<string> {
+  ): fc.Arbitrary<string> | undefined {
     const inferredArbitraries: Array<fc.Arbitrary<string>> = []
 
     const includeLessSpecificStringTypes = !config?.inferMostSpecificStringType
@@ -124,6 +166,10 @@ export class PropertyGenerator {
 
     if (PropertyGenerator.isString(obj) && includeLessSpecificStringTypes) {
       inferredArbitraries.push(fc.string())
+    }
+
+    if (inferredArbitraries.length === 0) {
+      return undefined
     }
 
     return fc.oneof(...inferredArbitraries)
@@ -200,7 +246,7 @@ export class PropertyGenerator {
   static inferNumber(
     obj: number,
     config?: InferNumberConfig,
-  ): fc.Arbitrary<number> {
+  ): fc.Arbitrary<number> | undefined {
     const inferredArbitraries: Array<fc.Arbitrary<number>> = []
 
     if (PropertyGenerator.isInteger(obj)) {
@@ -213,6 +259,10 @@ export class PropertyGenerator {
 
     if (PropertyGenerator.isFloat(obj)) {
       inferredArbitraries.push(fc.float(), fc.double())
+    }
+
+    if (inferredArbitraries.length === 0) {
+      return undefined
     }
 
     return fc.oneof(...inferredArbitraries)

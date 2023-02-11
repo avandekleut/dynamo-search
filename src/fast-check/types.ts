@@ -8,6 +8,8 @@ export type InferNumberConfig = EmptyConfig
 
 export type EmptyConfig = Record<string, never>
 
+export type GeneratorFunc<T> = () => T
+
 export type BooleanCompareFunc = CompareFunc<boolean>
 
 export type NumericCompareFunc = CompareFunc<number>
