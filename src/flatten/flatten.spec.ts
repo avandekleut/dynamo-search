@@ -1,15 +1,14 @@
 import { largeObjectWithDotsInAttributeNames } from '../../tests/data'
-import { flattenObject, typeSafeFlattenObject } from './flatten'
 
 import * as fc from 'fast-check'
-import { sort } from '../src/sort'
+import { Flatten } from './flatten'
 
 test('should contain the same items', () => {
-  const count = (tab: unknown, element: unknown) =>
+  const count = (tab: Array<unknown>, element: unknown) =>
     tab.filter((v) => v === element).length
   fc.assert(
     fc.property(fc.array(fc.integer()), (data) => {
-      const sorted = sort(data)
+      const sorted = data.sort()
       expect(sorted.length).toEqual(data.length)
       for (const item of data) {
         expect(count(sorted, item)).toEqual(count(data, item))
@@ -21,7 +20,9 @@ test('should contain the same items', () => {
 test('should produce ordered array', () => {
   fc.assert(
     fc.property(fc.array(fc.integer()), (data) => {
-      const sorted = sort(data)
+      const sorted = data.sort(function (a, b) {
+        return a - b
+      })
       for (let idx = 1; idx < sorted.length; ++idx) {
         expect(sorted[idx - 1]).toBeLessThanOrEqual(sorted[idx])
       }
@@ -29,7 +30,7 @@ test('should produce ordered array', () => {
   )
 })
 
-describe('flattenObject', () => {
+describe('Flatten.flatten', () => {
   beforeAll(async () => {
     return
   })
@@ -45,8 +46,8 @@ describe('flattenObject', () => {
       },
     }
 
-    const flattened = flattenObject(objectToFlatten)
-    typeSafeFlattenObject(objectToFlatten)
+    const flattened = Flatten.flatten(objectToFlatten)
+    Flatten.safeFlatten(objectToFlatten)
     expect(flattened).toHaveProperty(['foo.bar'], 'hello world')
   })
 
@@ -55,8 +56,8 @@ describe('flattenObject', () => {
       foo: ['hello', 'world'],
     }
 
-    const flattened = flattenObject(objectToFlatten)
-    typeSafeFlattenObject(objectToFlatten)
+    const flattened = Flatten.flatten(objectToFlatten)
+    Flatten.safeFlatten(objectToFlatten)
     expect(flattened).toHaveProperty(['foo.0'], 'hello')
     expect(flattened).toHaveProperty(['foo.1'], 'world')
   })
@@ -66,8 +67,8 @@ describe('flattenObject', () => {
       foo: [],
     }
 
-    const flattened = flattenObject(objectToFlatten)
-    typeSafeFlattenObject(objectToFlatten)
+    const flattened = Flatten.flatten(objectToFlatten)
+    Flatten.safeFlatten(objectToFlatten)
     expect(flattened).toHaveProperty(['foo'], [])
   })
 
@@ -76,13 +77,13 @@ describe('flattenObject', () => {
       foo: {},
     }
 
-    const flattened = flattenObject(objectToFlatten)
-    typeSafeFlattenObject(objectToFlatten)
+    const flattened = Flatten.flatten(objectToFlatten)
+    Flatten.safeFlatten(objectToFlatten)
     expect(flattened).toHaveProperty(['foo'], {})
   })
 
   it('handles edge cases', () => {
-    const flattened = flattenObject(largeObjectWithDotsInAttributeNames)
+    const flattened = Flatten.flatten(largeObjectWithDotsInAttributeNames)
     console.log({ flattened })
 
     expect(flattened).toHaveProperty('not_lost', [])

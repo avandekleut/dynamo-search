@@ -1,77 +1,87 @@
-type FlattenableObject = Record<string, unknown>
+import {
+  EmptyType,
+  FlattenedObject,
+  ScalarType,
+  TypesafeFlattenableObject,
+  UnsafeFlattenableObject,
+} from './types'
 
-/**
- * TODO: See if we can re-use the DynamoDB types instead of re-creating our own
- */
-type ScalarType = string | number | null
+export class Flatten {
+  static safeFlatten(object: TypesafeFlattenableObject): FlattenedObject {
+    return Flatten.flatten(object)
+  }
 
-interface DocumentType {
-  [x: string]: ScalarType | Array<ScalarType | DocumentType> | DocumentType
-}
+  static flatten(object: UnsafeFlattenableObject): FlattenedObject {
+    return Flatten.flattenRecursively(object, undefined, {})
+  }
 
-/**
- * Rejects objects whose terminal types won't be preserved, such as custom classes
- */
-export function typeSafeFlattenObject(object: DocumentType): FlattenableObject {
-  return flattenObject(object)
-}
+  private static flattenRecursively(
+    object: UnsafeFlattenableObject,
+    prefix: string | undefined = undefined,
+    result: FlattenedObject,
+  ): FlattenedObject {
+    // Preserve empty objects and arrays, they are lost otherwise
+    if (prefix && Flatten.isEmpty(object)) {
+      result[prefix] = Array.isArray(object) ? [] : {}
+      return result
+    }
 
-export function flattenObject(object: FlattenableObject): FlattenableObject {
-  return flattenObjectRecursively(object, undefined, {})
-}
+    prefix = prefix ? prefix + '.' : ''
 
-export function flattenObjectRecursively(
-  object: FlattenableObject,
-  prefix: string | undefined = undefined,
-  result: FlattenableObject,
-): FlattenableObject {
-  // Preserve empty objects and arrays, they are lost otherwise
-  if (prefix && isEmpty(object)) {
-    result[prefix] = Array.isArray(object) ? [] : {}
+    for (const key in object) {
+      if (Object.prototype.hasOwnProperty.call(object, key)) {
+        const subObject = object[key]
+
+        if (Flatten.isRecursivelyFlattenableObject(subObject)) {
+          Flatten.flattenRecursively(subObject, prefix + key, result)
+        } else if (Flatten.isScalarType(subObject)) {
+          result[prefix + key] = subObject
+        }
+      }
+    }
+
     return result
   }
 
-  prefix = prefix ? prefix + '.' : ''
-
-  for (const key in object) {
-    if (Object.prototype.hasOwnProperty.call(object, key)) {
-      const subObject = object[key]
-
-      if (isRecursivelyFlattenableObject(subObject)) {
-        flattenObjectRecursively(subObject, prefix + key, result)
-      } else {
-        result[prefix + key] = subObject
-      }
+  /**
+   * // TODO: Parse and fix this comment...
+   * Drops custom classes like Dates, etc
+   */
+  static isRecursivelyFlattenableObject(
+    object: unknown,
+  ): object is TypesafeFlattenableObject {
+    if (
+      typeof object === 'object' &&
+      (Array.isArray(object) ||
+        Object.prototype.toString.call(object) === '[object Object]') &&
+      object !== null
+    ) {
+      return true
     }
+    return false
   }
 
-  return result
-}
-
-function isEmpty(object: unknown): boolean {
-  if (
-    typeof object === 'object' &&
-    object !== null &&
-    Object.keys(object).length === 0
-  ) {
-    return true
+  static isScalarType(object: unknown): object is ScalarType {
+    if (
+      typeof object === 'string' ||
+      typeof object === 'number' ||
+      typeof object === 'bigint' ||
+      typeof object === 'boolean' ||
+      Flatten.isEmpty(object)
+    ) {
+      return true
+    }
+    return false
   }
-  return false
-}
 
-/**
- * Drops custom classes like Dates, etc
- */
-function isRecursivelyFlattenableObject(
-  object: unknown,
-): object is FlattenableObject {
-  if (
-    typeof object === 'object' &&
-    (Array.isArray(object) ||
-      Object.prototype.toString.call(object) === '[object Object]') &&
-    object !== null
-  ) {
-    return true
+  static isEmpty(object: unknown): object is EmptyType {
+    if (
+      typeof object === 'object' &&
+      object !== null &&
+      Object.keys(object).length === 0
+    ) {
+      return true
+    }
+    return false
   }
-  return false
 }
