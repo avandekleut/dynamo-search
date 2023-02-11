@@ -38,8 +38,7 @@
   "author": "Alexander Vandekleut <avandekleut@gmail.com>",
   "license": "Apache-2.0",
   "dependencies": {
-    "@aws-sdk/client-dynamodb": "^3.267.0",
-    "@aws-sdk/lib-dynamodb": "^3.267.0",
+    "aws-sdk": "^2.1313.0",
     "tslib": "~2.4"
   },
   "volta": {
