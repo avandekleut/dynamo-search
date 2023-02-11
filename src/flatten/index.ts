@@ -1,2 +1,2 @@
-export * from './flatten'
+export * from './Flatten'
 export * from './types'

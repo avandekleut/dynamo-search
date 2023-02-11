@@ -5,4 +5,4 @@ npm test
 
 npx sort-package-json
 
-echo "Rank husky pre-commit hook 🫡"
+echo "Ran husky pre-commit hook 🫡"
