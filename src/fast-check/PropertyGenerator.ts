@@ -3,13 +3,13 @@ import * as fc from 'fast-check'
 import { simpleLog } from '../logger/simpleLog'
 
 import {
-  BooleanCompareFunc,
-  GeneratorFunc,
+  BooleanCompareFunction,
+  GeneratorFunction,
   GenericFunction,
   InferConfig,
   InferNumberConfig,
   InferStringConfig,
-  NumericCompareFunc,
+  NumericCompareFunction,
 } from './types'
 
 export class PropertyGenerator {
@@ -68,11 +68,15 @@ export class PropertyGenerator {
       return fc.record(result) as fc.Arbitrary<T>
     }
 
-    return PropertyGenerator.getMinimumArbitrary(
+    const minimumArbitrary = PropertyGenerator.getMinimumArbitrary(
       inferredArbitraries,
-    ) as fc.Arbitrary<T>
+    ) as fc.Arbitrary<T> | undefined
 
-    // return fc.oneof(...inferredArbitraries) as fc.Arbitrary<T>
+    if (minimumArbitrary === undefined) {
+      throw new Error(`Could not infer ${obj}`)
+    }
+
+    return minimumArbitrary
   }
 
   static inferFunction(
@@ -88,29 +92,41 @@ export class PropertyGenerator {
       inferredArbitraries.push(fc.compareFunc())
     }
 
-    const inferredGeneratorFunc = PropertyGenerator.inferGeneratorFunc(obj)
-    if (inferredGeneratorFunc) {
-      inferredArbitraries.push(inferredGeneratorFunc)
+    if (PropertyGenerator.isGeneratorFunction(obj)) {
+      const inferredFunctionArbitrary =
+        PropertyGenerator.inferGeneratorFunc(obj)
+      if (inferredFunctionArbitrary) {
+        inferredArbitraries.push(inferredFunctionArbitrary)
+      }
     }
 
     return PropertyGenerator.getMinimumArbitrary(inferredArbitraries)
   }
 
   static inferGeneratorFunc<T>(
+    obj: GeneratorFunction<T>,
+  ): fc.Arbitrary<GeneratorFunction<T>> | undefined {
+    const result = obj()
+    const inferredResultArbitrary = PropertyGenerator.infer(result)
+    return fc.func(inferredResultArbitrary) as fc.Arbitrary<
+      GeneratorFunction<T>
+    >
+  }
+
+  static isGeneratorFunction<T>(
     obj: GenericFunction,
-  ): fc.Arbitrary<GeneratorFunc<T>> | undefined {
+  ): obj is GeneratorFunction<T> {
     try {
-      const result = obj()
-      const inferredResultArbitrary = PropertyGenerator.infer(result)
-      return fc.func(inferredResultArbitrary) as fc.Arbitrary<GeneratorFunc<T>>
+      obj()
+      return true
     } catch (err) {
-      return undefined
+      return false
     }
   }
 
   static isNumericCompareFunction(
     obj: GenericFunction,
-  ): obj is NumericCompareFunc {
+  ): obj is NumericCompareFunction {
     try {
       return PropertyGenerator.isNumber(obj(0, 1))
     } catch (err) {
@@ -120,7 +136,7 @@ export class PropertyGenerator {
 
   static isBooleanCompareFunction(
     obj: GenericFunction,
-  ): obj is BooleanCompareFunc {
+  ): obj is BooleanCompareFunction {
     try {
       return PropertyGenerator.isBoolean(obj(0, 1))
     } catch (err) {

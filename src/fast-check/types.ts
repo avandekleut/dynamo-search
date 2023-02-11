@@ -11,11 +11,16 @@ export type InferNumberConfig = EmptyConfig
 
 export type EmptyConfig = Record<string, never>
 
-export type GeneratorFunc<T> = () => T
+export type InferrableFunction<T> =
+  | GeneratorFunction<T>
+  | BooleanCompareFunction
+  | NumericCompareFunction
 
-export type BooleanCompareFunc = CompareFunc<boolean>
+export type GeneratorFunction<T> = () => T
 
-export type NumericCompareFunc = CompareFunc<number>
+export type BooleanCompareFunction = CompareFunc<boolean>
+
+export type NumericCompareFunction = CompareFunc<number>
 
 export type CompareFunc<T> = (a: unknown, b: unknown) => T
 
