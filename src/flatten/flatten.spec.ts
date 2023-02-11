@@ -1,4 +1,4 @@
-import { flattenObject, typeSafeFlattenObject } from './flatten.js'
+import { flattenObject, typeSafeFlattenObject } from './flatten'
 
 describe('flattenObject', () => {
   beforeAll(async () => {
