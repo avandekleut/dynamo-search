@@ -1,14 +1,29 @@
+import * as EmailValidator from 'email-validator'
 import * as fc from 'fast-check'
 
 import { Obj } from '../obj'
 import { InferConfig, InferNumberConfig, InferStringConfig } from './types'
 
 export class PropertyGenerator {
+  // TODO: Ensure all inferred arbitraries have length at least 1
+
   static infer<T>(obj: T, config?: InferConfig): fc.Arbitrary<T> {
     const inferredArbitraries: Array<fc.Arbitrary<unknown>> = []
 
     if (PropertyGenerator.isBoolean(obj)) {
       inferredArbitraries.push(fc.boolean())
+    }
+
+    if (PropertyGenerator.isBigInt(obj)) {
+      inferredArbitraries.push(fc.bigInt(), fc.bigUint())
+    }
+
+    if (PropertyGenerator.isDate(obj)) {
+      inferredArbitraries.push(fc.date())
+    }
+
+    if (PropertyGenerator.isNull(obj) || PropertyGenerator.isUndefined(obj)) {
+      inferredArbitraries.push(fc.constant(obj))
     }
 
     if (PropertyGenerator.isNumber(obj)) {
@@ -22,15 +37,27 @@ export class PropertyGenerator {
     return fc.oneof(...inferredArbitraries) as fc.Arbitrary<T>
   }
 
-  static inferString<T extends string>(
-    obj: T,
+  static isUndefined(obj: unknown): obj is undefined {
+    return obj === undefined
+  }
+
+  static isNull(obj: unknown): obj is null {
+    return obj === null
+  }
+
+  static isDate(obj: unknown): obj is Date {
+    return obj instanceof Date
+  }
+
+  static inferString(
+    obj: string,
     config?: InferStringConfig,
-  ): fc.Arbitrary<T> {
-    const inferredArbitraries: Array<fc.Arbitrary<unknown>> = []
+  ): fc.Arbitrary<string> {
+    const inferredArbitraries: Array<fc.Arbitrary<string>> = []
 
     const includeLessSpecificStringTypes = !config?.inferMostSpecificStringType
 
-    if (PropertyGenerator.isHexString(obj)) {
+    if (PropertyGenerator.isHexString(obj) && includeLessSpecificStringTypes) {
       inferredArbitraries.push(fc.hexaString())
     }
 
@@ -59,44 +86,82 @@ export class PropertyGenerator {
       inferredArbitraries.push(fc.string())
     }
 
-    return fc.oneof(...inferredArbitraries) as fc.Arbitrary<T>
+    return fc.oneof(...inferredArbitraries)
   }
 
-  static isUnicodeString(obj: unknown): obj is string {
-    return PropertyGenerator.validateRegex(obj, /^[\u0032-\u007F]+/)
+  static isEmail(obj: string): boolean {
+    return EmailValidator.validate(obj)
   }
 
-  static isAsciiString(obj: unknown): obj is string {
-    return PropertyGenerator.validateRegex(obj, /[ -~]/)
+  static isDomain(obj: string): boolean {
+    return PropertyGenerator.validateRegex(
+      obj,
+      /^(?!.{256})(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+(?:[a-z]{1,63}|xn--[a-z0-9]{1,59})$/,
+    )
   }
 
-  static isBase64String(obj: unknown): obj is string {
+  static isUuid(obj: string): boolean {
+    return PropertyGenerator.validateRegex(
+      obj,
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-5][0-9a-f]{3}-[089ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
+    )
+  }
+
+  static isIpV6(obj: string): boolean {
+    return PropertyGenerator.validateRegex(
+      obj,
+      /^(([0-9a-fA-F]{1,4}:){7,7}[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,7}:|([0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,5}(:[0-9a-fA-F]{1,4}){1,2}|([0-9a-fA-F]{1,4}:){1,4}(:[0-9a-fA-F]{1,4}){1,3}|([0-9a-fA-F]{1,4}:){1,3}(:[0-9a-fA-F]{1,4}){1,4}|([0-9a-fA-F]{1,4}:){1,2}(:[0-9a-fA-F]{1,4}){1,5}|[0-9a-fA-F]{1,4}:((:[0-9a-fA-F]{1,4}){1,6})|:((:[0-9a-fA-F]{1,4}){1,7}|:)|fe80:(:[0-9a-fA-F]{0,4}){0,4}%[0-9a-zA-Z]{1,}|::(ffff(:0{1,4}){0,1}:){0,1}((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])|([0-9a-fA-F]{1,4}:){1,4}:((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9]))$/,
+    )
+  }
+
+  static isIpV4(obj: string): boolean {
+    return PropertyGenerator.validateRegex(
+      obj,
+      /^((25[0-5]|(2[0-4]|1\d|[1-9]|)\d)\.?\b){4}$/,
+    )
+  }
+
+  static isJson(obj: string): boolean {
+    try {
+      JSON.parse(obj)
+      return true
+    } catch (err) {
+      return false
+    }
+  }
+
+  static isHexString(obj: string): boolean {
+    return PropertyGenerator.validateRegex(obj, /^[a-fA-F0-9]+$/)
+  }
+
+  static isBase64String(obj: string): boolean {
     return PropertyGenerator.validateRegex(
       obj,
       /^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=|[A-Za-z0-9+/]{4})$/,
     )
   }
 
-  static isHexString(obj: unknown): obj is string {
-    return PropertyGenerator.validateRegex(obj, /^[a-fA-F0-9]+$/)
+  static isAsciiString(obj: string): boolean {
+    return PropertyGenerator.validateRegex(obj, /[ -~]/)
   }
 
-  private static validateRegex(obj: unknown, regex: RegExp): obj is string {
-    if (PropertyGenerator.isString(obj)) {
-      return regex.exec(obj) !== null
-    }
-    return false
+  static isUnicodeString(obj: string): boolean {
+    return PropertyGenerator.validateRegex(obj, /^[\u0032-\u007F]+/)
+  }
+
+  private static validateRegex(obj: string, regex: RegExp): boolean {
+    return regex.exec(obj) !== null
   }
 
   static isString(obj: unknown): obj is string {
     return typeof obj === 'string'
   }
 
-  static inferNumber<T extends number>(
-    obj: T,
+  static inferNumber(
+    obj: number,
     config?: InferNumberConfig,
-  ): fc.Arbitrary<T> {
-    const inferredArbitraries: Array<fc.Arbitrary<unknown>> = []
+  ): fc.Arbitrary<number> {
+    const inferredArbitraries: Array<fc.Arbitrary<number>> = []
 
     if (PropertyGenerator.isInteger(obj)) {
       inferredArbitraries.push(fc.integer())
@@ -110,26 +175,22 @@ export class PropertyGenerator {
       inferredArbitraries.push(fc.float(), fc.double())
     }
 
-    if (PropertyGenerator.isBigInt(obj)) {
-      inferredArbitraries.push(fc.bigInt(), fc.bigUint())
-    }
-
-    return fc.oneof(...inferredArbitraries) as fc.Arbitrary<T>
+    return fc.oneof(...inferredArbitraries)
   }
 
   static isBigInt(obj: unknown): obj is bigint {
     return typeof obj === 'bigint'
   }
 
-  static isFloat(obj: unknown): obj is number {
+  static isFloat(obj: number): boolean {
     return Number(obj) === obj && obj % 1 !== 0
   }
 
-  static isNat(obj: unknown): obj is number {
+  static isNat(obj: number): boolean {
     return PropertyGenerator.isInteger(obj) && obj >= 0
   }
 
-  static isInteger(obj: unknown): obj is number {
+  static isInteger(obj: number): boolean {
     return Number.isSafeInteger(obj)
   }
 
