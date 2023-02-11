@@ -8,30 +8,46 @@ export class Flatten {
   }
 
   static flatten(object: AnyType): FlattenedObject {
-    return Flatten.flattenRecursively(object, undefined, {})
+    return Flatten.flattenRecursively(object, '', {})
   }
 
   private static flattenRecursively(
     object: AnyType,
-    prefix: string | undefined = undefined,
+    prefix = '',
     result: FlattenedObject,
   ): FlattenedObject {
-    // Preserve empty objects and arrays, they are lost otherwise
     if (prefix && ObjectInspector.isTerminalType(object)) {
+      console.log(`Found terminal object: ${JSON.stringify(object)}`)
       result[prefix] = object
       return result
     }
 
     prefix = prefix ? prefix + '.' : ''
 
-    for (const key in object) {
-      if (Object.prototype.hasOwnProperty.call(object, key)) {
-        const subObject = object[key]
+    if (ObjectInspector.isListType(object)) {
+      for (let key = 0; key < object.length; key++) {
+        if (Object.prototype.hasOwnProperty.call(object, key)) {
+          const subObject = object[key]
 
-        if (ObjectInspector.isRecursivelyFlattenableObject(subObject)) {
-          Flatten.flattenRecursively(subObject, prefix + key, result)
-        } else if (ObjectInspector.isTerminalType(subObject)) {
-          result[prefix + key] = subObject
+          if (ObjectInspector.isRecursivelyFlattenableObject(subObject)) {
+            Flatten.flattenRecursively(subObject, prefix + key, result)
+          } else if (ObjectInspector.isTerminalType(subObject)) {
+            result[prefix + key] = subObject
+          }
+        }
+      }
+    }
+
+    if (ObjectInspector.isMapType(object)) {
+      for (const key in object) {
+        if (Object.prototype.hasOwnProperty.call(object, key)) {
+          const subObject = object[key]
+
+          if (ObjectInspector.isRecursivelyFlattenableObject(subObject)) {
+            Flatten.flattenRecursively(subObject, prefix + key, result)
+          } else if (ObjectInspector.isTerminalType(subObject)) {
+            result[prefix + key] = subObject
+          }
         }
       }
     }

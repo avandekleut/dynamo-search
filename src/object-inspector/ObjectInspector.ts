@@ -14,7 +14,10 @@ export class ObjectInspector {
   static isRecursivelyFlattenableObject(
     object: unknown,
   ): object is FlattenableObject {
-    if (ObjectInspector.isArray(object) || ObjectInspector.isObject(object)) {
+    if (
+      ObjectInspector.isListType(object) ||
+      ObjectInspector.isMapType(object)
+    ) {
       return true
     }
     return false
@@ -53,14 +56,17 @@ export class ObjectInspector {
   }
 
   static isEmptyArray(object: unknown): object is EmptyArray {
-    if (ObjectInspector.isArray(object) && Object.keys(object).length === 0) {
+    if (
+      ObjectInspector.isListType(object) &&
+      Object.keys(object).length === 0
+    ) {
       return true
     }
     return false
   }
 
   static isEmptyObject(object: unknown): object is EmptyObject {
-    if (ObjectInspector.isObject(object) && Object.keys(object).length === 0) {
+    if (ObjectInspector.isMapType(object) && Object.keys(object).length === 0) {
       return true
     }
     return false
@@ -68,7 +74,8 @@ export class ObjectInspector {
 
   static isDocumentType(object: unknown): object is DocumentType {
     if (
-      (ObjectInspector.isArray(object) || ObjectInspector.isObject(object)) &&
+      (ObjectInspector.isListType(object) ||
+        ObjectInspector.isMapType(object)) &&
       !ObjectInspector.isEmpty(object)
     ) {
       return true
@@ -76,7 +83,7 @@ export class ObjectInspector {
     return false
   }
 
-  static isObject(object: unknown): object is MapType {
+  static isMapType(object: unknown): object is MapType {
     if (
       typeof object === 'object' &&
       !Array.isArray(object) &&
@@ -87,7 +94,7 @@ export class ObjectInspector {
     return false
   }
 
-  static isArray(object: unknown): object is ListType {
+  static isListType(object: unknown): object is ListType {
     if (
       typeof object === 'object' &&
       Array.isArray(object) &&
