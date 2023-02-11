@@ -1,5 +1,7 @@
 import * as fc from 'fast-check'
 
+import { stringify } from 'flatted' // for dealing with comparing objects with circular references
+
 import { expect } from '@jest/globals'
 
 import { PropertyGenerator } from './PropertyGenerator'
@@ -27,7 +29,7 @@ function getRepresentativeSample(
 function stringifyArbitrary(arbitrary: fc.Arbitrary<unknown>): string {
   const sample = getRepresentativeSample(arbitrary)
 
-  return JSON.stringify({ arbitrary, sample }, (key, value) =>
+  return stringify({ arbitrary, sample }, (key, value) =>
     typeof value === 'bigint' ? value.toString() : value,
   )
 }
@@ -46,15 +48,15 @@ describe('PropertyGenerator infers from sampled arbitraries', () => {
 
     fc.emailAddress(),
     fc.domain(),
-    // fc.uuid(),
-    // fc.ipV4(),
-    // fc.ipV4(),
-    // fc.json(),
-    // fc.hexaString(),
-    // fc.base64String(),
-    // fc.asciiString(),
-    // fc.unicodeString(),
-    // fc.string(),
+    fc.uuid(),
+    fc.ipV4(),
+    fc.ipV6(),
+    fc.json(),
+    fc.hexaString(),
+    fc.base64String(),
+    fc.asciiString(),
+    fc.unicodeString(),
+    fc.string(),
   ]
 
   const testableArbitariesFuncs = testableArbitraries.map((arbitrary) =>
