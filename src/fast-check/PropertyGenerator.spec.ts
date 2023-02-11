@@ -1,44 +1,72 @@
 import * as fc from 'fast-check'
-import {
-  largeObjectWithDotsInAttributeNames,
-  smallFlatObject,
-} from '../../tests/data'
-import { Obj } from '../obj'
 
+import { expect } from '@jest/globals'
+
+import { LoggerFactory } from '../logger/LoggerFactory'
 import { PropertyGenerator } from './PropertyGenerator'
 
-describe('PropertyGenerator', () => {
-  test('generateArbitraryFromObject(smallFlatObject)', () => {
-    const arbitrary =
-      PropertyGenerator.generateArbitraryFromObject(smallFlatObject)
+function convertArbitraryToObject(
+  arbitrary: fc.Arbitrary<unknown>,
+): Record<string, unknown> {
+  return JSON.parse(
+    JSON.stringify({
+      arbitrary,
+      type: Object.prototype.constructor(arbitrary).name,
+    }),
+  )
+}
 
-    fc.assert(
-      fc.property(arbitrary, (generated) => {
-        console.log({ generated })
-        expect(typeof generated.string).toBe('string')
-        expect(typeof generated.number).toBe('number')
-        expect(typeof generated.boolean).toBe('boolean')
-        expect(generated.null).toBe(null)
-      }),
-    )
+describe('PropertyGenerator infers from sampled arbitraries', () => {
+  const testableArbitraries: Array<fc.Arbitrary<unknown>> = [
+    fc.boolean(),
+    // fc.bigInt(),
+    // fc.bigUint(),
+    // fc.date(),
+    // fc.constant(null),
+    // fc.constant(undefined),
+
+    // fc.compareBooleanFunc(),
+    // fc.compareFunc(),
+
+    // fc.emailAddress(),
+    // fc.domain(),
+    // fc.uuid(),
+    // fc.ipV4(),
+    // fc.ipV4(),
+    // fc.json(),
+    // fc.hexaString(),
+    // fc.base64String(),
+    // fc.asciiString(),
+    // fc.unicodeString(),
+    // fc.string(),
+  ]
+
+  const testableArbitariesFuncs = testableArbitraries.map((arbitrary) =>
+    fc.func(arbitrary),
+  )
+
+  test('boolean', () => {
+    const booleanArbitrary = fc.boolean()
+    const booleanExample = fc.sample(booleanArbitrary)
+    const inferredArbitrary = PropertyGenerator.infer(booleanExample)
+
+    const logger = LoggerFactory.getInstance()
+    // expect(convertArbitraryToObject(inferredArbitrary)).toMatchObject(
+    //   convertArbitraryToObject(booleanArbitrary),
+    // )
   })
 
-  test.skip('generateArbitraryFromObject(largeObjectWithDotsInAttributeNames)', () => {
-    const arbitrary = PropertyGenerator.generateArbitraryFromObject(
-      largeObjectWithDotsInAttributeNames,
-    )
+  test.skip('identity', () => {
+    for (const arbitrary of testableArbitraries) {
+      fc.assert(
+        fc.property(arbitrary, (generated) => {
+          const inferred = PropertyGenerator.infer(generated)
 
-    fc.assert(
-      fc.property(arbitrary, (generated) => {
-        console.log({ generated })
-
-        expect(typeof generated.value.foo.bar).toBe('string')
-        expect(typeof generated.value.foo.so.freakin.nested).toBe('string')
-        expect(Obj.isListType(generated.not_lost)).toBe(true)
-        expect(Obj.isEmptyList(generated.not_lost)).toBe(true)
-        expect(Obj.isMapType(generated.not_lost2)).toBe(true)
-        expect(Obj.isEmptyMap(generated.not_lost2)).toBe(true)
-      }),
-    )
+          expect(convertArbitraryToObject(inferred)).toMatchObject(
+            convertArbitraryToObject(arbitrary),
+          )
+        }),
+      )
+    }
   })
 })

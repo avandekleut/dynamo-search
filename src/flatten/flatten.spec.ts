@@ -42,8 +42,6 @@ describe('Flatten.flatten', () => {
     const flattened = Flatten.flatten(objectToFlatten)
     Flatten.safeFlatten(objectToFlatten)
 
-    console.log(flattened)
-
     expect(flattened).toHaveProperty(['foo.0'], 'hello')
     expect(flattened).toHaveProperty(['foo.1.bar'], 'world')
   })

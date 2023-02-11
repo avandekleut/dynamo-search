@@ -1,4 +1,7 @@
-export type InferConfig = InferStringConfig & InferNumberConfig
+export type InferConfig = InferStringConfig &
+  InferNumberConfig & {
+    verbose: false
+  }
 
 export type InferStringConfig = {
   inferMostSpecificStringType?: boolean

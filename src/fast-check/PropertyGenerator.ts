@@ -1,7 +1,7 @@
 import * as EmailValidator from 'email-validator'
 import * as fc from 'fast-check'
+import { simpleLog } from '../logger/simpleLog'
 
-import { Obj } from '../obj'
 import {
   BooleanCompareFunc,
   GeneratorFunc,
@@ -13,8 +13,6 @@ import {
 } from './types'
 
 export class PropertyGenerator {
-  // TODO: Ensure all inferred arbitraries have length at least 1
-
   static infer<T>(obj: T, config?: InferConfig): fc.Arbitrary<T> {
     const inferredArbitraries: Array<fc.Arbitrary<unknown>> = []
 
@@ -55,6 +53,21 @@ export class PropertyGenerator {
       }
     }
 
+    if (PropertyGenerator.isArray(obj)) {
+      const inferredArbitrary = fc.array(
+        fc.oneof(...obj.map((item) => PropertyGenerator.infer(item))),
+      )
+      inferredArbitraries.push(inferredArbitrary)
+    }
+
+    if (PropertyGenerator.isRecord(obj)) {
+      const result: Record<string, fc.Arbitrary<unknown>> = {}
+      Object.keys(obj).forEach(function (key, index) {
+        result[key] = PropertyGenerator.infer(obj[key])
+      })
+      return fc.record(result) as fc.Arbitrary<T>
+    }
+
     return fc.oneof(...inferredArbitraries) as fc.Arbitrary<T>
   }
 
@@ -76,11 +89,7 @@ export class PropertyGenerator {
       inferredArbitraries.push(inferredGeneratorFunc)
     }
 
-    if (inferredArbitraries.length === 0) {
-      return undefined
-    }
-
-    return fc.oneof(...inferredArbitraries)
+    return PropertyGenerator.getMinimumArbitrary(inferredArbitraries)
   }
 
   static inferGeneratorFunc<T>(
@@ -137,45 +146,56 @@ export class PropertyGenerator {
   ): fc.Arbitrary<string> | undefined {
     const inferredArbitraries: Array<fc.Arbitrary<string>> = []
 
-    const includeLessSpecificStringTypes = !config?.inferMostSpecificStringType
+    const returnAll = !config?.inferMostSpecificStringType
 
-    if (PropertyGenerator.isHexString(obj) && includeLessSpecificStringTypes) {
+    if (PropertyGenerator.isEmailAddress(obj) && returnAll) {
+      inferredArbitraries.push(fc.emailAddress())
+    }
+
+    if (PropertyGenerator.isDomain(obj) && returnAll) {
+      inferredArbitraries.push(fc.domain())
+    }
+
+    if (PropertyGenerator.isUuid(obj) && returnAll) {
+      inferredArbitraries.push(fc.uuid())
+    }
+
+    if (PropertyGenerator.isIpV6(obj) && returnAll) {
+      inferredArbitraries.push(fc.ipV6())
+    }
+
+    if (PropertyGenerator.isIpV4(obj) && returnAll) {
+      inferredArbitraries.push(fc.ipV4())
+    }
+
+    if (PropertyGenerator.isJson(obj) && returnAll) {
+      inferredArbitraries.push(fc.json())
+    }
+
+    if (PropertyGenerator.isHexString(obj) && returnAll) {
       inferredArbitraries.push(fc.hexaString())
     }
 
-    if (
-      PropertyGenerator.isBase64String(obj) &&
-      includeLessSpecificStringTypes
-    ) {
+    if (PropertyGenerator.isBase64String(obj) && returnAll) {
       inferredArbitraries.push(fc.base64String())
     }
 
-    if (
-      PropertyGenerator.isAsciiString(obj) &&
-      includeLessSpecificStringTypes
-    ) {
+    if (PropertyGenerator.isAsciiString(obj) && returnAll) {
       inferredArbitraries.push(fc.asciiString())
     }
 
-    if (
-      PropertyGenerator.isUnicodeString(obj) &&
-      includeLessSpecificStringTypes
-    ) {
+    if (PropertyGenerator.isUnicodeString(obj) && returnAll) {
       inferredArbitraries.push(fc.unicodeString())
     }
 
-    if (PropertyGenerator.isString(obj) && includeLessSpecificStringTypes) {
+    if (PropertyGenerator.isString(obj) && returnAll) {
       inferredArbitraries.push(fc.string())
     }
 
-    if (inferredArbitraries.length === 0) {
-      return undefined
-    }
-
-    return fc.oneof(...inferredArbitraries)
+    return PropertyGenerator.getMinimumArbitrary(inferredArbitraries)
   }
 
-  static isEmail(obj: string): boolean {
+  static isEmailAddress(obj: string): boolean {
     return EmailValidator.validate(obj)
   }
 
@@ -261,11 +281,7 @@ export class PropertyGenerator {
       inferredArbitraries.push(fc.float(), fc.double())
     }
 
-    if (inferredArbitraries.length === 0) {
-      return undefined
-    }
-
-    return fc.oneof(...inferredArbitraries)
+    return PropertyGenerator.getMinimumArbitrary(inferredArbitraries)
   }
 
   static isBigInt(obj: unknown): obj is bigint {
@@ -288,39 +304,30 @@ export class PropertyGenerator {
     return Number(obj) === obj
   }
 
+  @simpleLog()
   static isBoolean(obj: unknown): obj is boolean {
     return typeof obj === 'boolean'
   }
 
-  static generateArbitraryFromObject<T>(object: T): fc.Arbitrary<T> {
-    if (Obj.isString(object)) {
-      return fc.string() as fc.Arbitrary<T>
-    } else if (Obj.isNumber(object)) {
-      return fc.oneof(fc.double(), fc.integer()) as fc.Arbitrary<T>
-    } else if (Obj.isBoolean(object)) {
-      return fc.boolean() as fc.Arbitrary<T>
-    } else if (Obj.isNull(object)) {
-      return fc.constant(null) as fc.Arbitrary<T>
-    } else if (Obj.isListType(object)) {
-      return fc.array(
-        fc.oneof(
-          ...object.map((item) =>
-            PropertyGenerator.generateArbitraryFromObject(item),
-          ),
-        ),
-      ) as fc.Arbitrary<T>
-    } else if (Obj.isMapType(object)) {
-      const result: Record<string, fc.Arbitrary<unknown>> = {}
-      Object.keys(object).forEach(function (key, index) {
-        result[key] = PropertyGenerator.generateArbitraryFromObject(object[key])
-      })
-      return fc.record(result) as fc.Arbitrary<T>
-    } else {
-      throw new Error(
-        'Unable to generate properties for object:' +
-          '\n' +
-          JSON.stringify(object, undefined, 2),
-      )
+  static isRecord(obj: unknown): obj is Record<string, unknown> {
+    return typeof obj === 'object' && !Array.isArray(obj) && obj !== null
+  }
+
+  static isArray(obj: unknown): obj is Array<unknown> {
+    return typeof obj === 'object' && Array.isArray(obj) && obj !== null
+  }
+
+  private static getMinimumArbitrary<T>(
+    inferredArbitraries: Array<fc.Arbitrary<T>>,
+  ): fc.Arbitrary<T> | undefined {
+    if (inferredArbitraries.length === 0) {
+      return undefined
     }
+
+    if (inferredArbitraries.length === 1) {
+      return inferredArbitraries[0]
+    }
+
+    return fc.oneof(...inferredArbitraries) as fc.Arbitrary<T>
   }
 }
