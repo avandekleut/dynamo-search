@@ -23,7 +23,7 @@ export class PropertyGenerator {
     }
 
     if (PropertyGenerator.isBigInt(obj)) {
-      inferredArbitraries.push(fc.bigInt(), fc.bigUint())
+      inferredArbitraries.push(fc.bigInt())
     }
 
     if (PropertyGenerator.isDate(obj)) {
@@ -318,7 +318,7 @@ export class PropertyGenerator {
     }
 
     if (PropertyGenerator.isFloat(obj)) {
-      inferredArbitraries.push(fc.float(), fc.double())
+      inferredArbitraries.push(fc.double())
     }
 
     return PropertyGenerator.getMinimumArbitrary(inferredArbitraries)
@@ -355,7 +355,12 @@ export class PropertyGenerator {
 
   @debug
   static isRecord(obj: unknown): obj is Record<string, unknown> {
-    return typeof obj === 'object' && !Array.isArray(obj) && obj !== null
+    return (
+      typeof obj === 'object' &&
+      !Array.isArray(obj) &&
+      obj !== null &&
+      !PropertyGenerator.isDate(obj)
+    )
   }
 
   @debug

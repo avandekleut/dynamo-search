@@ -5,9 +5,8 @@ import { expect } from '@jest/globals'
 import { PropertyGenerator } from './PropertyGenerator'
 
 const testableArbitraries: Array<fc.Arbitrary<unknown>> = [
-  // fc.boolean(),
-  // fc.bigInt(),
-  // fc.bigUint(),
+  fc.boolean(),
+  fc.bigInt(),
   // fc.date(),
   // fc.constant(null),
   // fc.constant(undefined),
@@ -24,6 +23,9 @@ const testableArbitraries: Array<fc.Arbitrary<unknown>> = [
   // fc.asciiString(),
   // fc.unicodeString(),
   // fc.string(),
+  // fc.nat(),
+  // fc.integer(),
+  // fc.double(),
 ]
 
 const testableArbitariesFuncs = testableArbitraries.map((arbitrary) =>
@@ -60,7 +62,15 @@ function stringifyArbitrary(arbitrary: fc.Arbitrary<unknown>): string {
   )
 }
 
-describe('stringifyArbitrary', () => {
+describe('test for testing code', () => {
+  test('generating a representative sample is consistent', () => {
+    for (const arbitrary of testableArbitraries) {
+      expect(generateRepresentativeSample(arbitrary)).toEqual(
+        generateRepresentativeSample(arbitrary),
+      )
+    }
+  })
+
   test('stringifying arbitraries makes them unique', () => {
     const converted = testableArbitraries.map((arbitrary) =>
       stringifyArbitrary(arbitrary),
@@ -71,13 +81,14 @@ describe('stringifyArbitrary', () => {
 })
 
 describe('PropertyGenerator infers from arbitraries', () => {
-  test.skip('date', () => {
-    const arbitrary = fc.date()
+  test('bigint', () => {
+    const arbitrary = fc.bigInt()
     const sample = fc.sample(arbitrary)[0]
 
     console.log({ sample })
 
     const inferredArbitrary = PropertyGenerator.infer(sample)
+    // const inferredArbitrary = fc.bigInt()
 
     const sampleInferred = fc.sample(inferredArbitrary)[0]
     console.log({ sampleInferred })
@@ -87,7 +98,7 @@ describe('PropertyGenerator infers from arbitraries', () => {
     )
   })
 
-  test.skip('all basic arbitraries invertible', () => {
+  test('all basic arbitraries invertible', () => {
     for (const arbitrary of testableArbitraries) {
       const sample = fc.sample(arbitrary)[0]
       const inferredArbitrary = PropertyGenerator.infer(sample)
