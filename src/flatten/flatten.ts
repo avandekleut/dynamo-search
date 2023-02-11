@@ -1,7 +1,7 @@
 import {
   FlattenableObject,
   FlattenedObject,
-  UnsafeFlattenableObject,
+  GenericObject,
 } from '../object-inspector'
 import { ObjectInspector } from '../object-inspector/ObjectInspector'
 
@@ -10,12 +10,12 @@ export class Flatten {
     return Flatten.flatten(object)
   }
 
-  static flatten(object: UnsafeFlattenableObject): FlattenedObject {
+  static flatten(object: GenericObject): FlattenedObject {
     return Flatten.flattenRecursively(object, undefined, {})
   }
 
   private static flattenRecursively(
-    object: UnsafeFlattenableObject,
+    object: GenericObject,
     prefix: string | undefined = undefined,
     result: FlattenedObject,
   ): FlattenedObject {

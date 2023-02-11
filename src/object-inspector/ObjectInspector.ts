@@ -1,4 +1,10 @@
-import { EmptyType, FlattenableObject, ScalarType, TerminalType } from './types'
+import {
+  EmptyType,
+  FlattenableObject,
+  GenericObject,
+  ScalarType,
+  TerminalType,
+} from './types'
 
 export class ObjectInspector {
   static isRecursivelyFlattenableObject(
@@ -37,6 +43,17 @@ export class ObjectInspector {
       typeof object === 'object' &&
       object !== null &&
       Object.keys(object).length === 0
+    ) {
+      return true
+    }
+    return false
+  }
+
+  static isGenericObject(object: unknown): object is GenericObject {
+    if (
+      typeof object === 'object' &&
+      !Array.isArray(object) &&
+      object !== null
     ) {
       return true
     }

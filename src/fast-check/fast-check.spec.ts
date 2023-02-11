@@ -27,4 +27,17 @@ describe('fast-check', () => {
       }),
     )
   })
+
+  test('should produce generate appropriate properties array', () => {
+    fc.assert(
+      fc.property(fc.array(fc.integer()), (data) => {
+        const sorted = data.sort(function (a, b) {
+          return a - b
+        })
+        for (let idx = 1; idx < sorted.length; ++idx) {
+          expect(sorted[idx - 1]).toBeLessThanOrEqual(sorted[idx])
+        }
+      }),
+    )
+  })
 })
