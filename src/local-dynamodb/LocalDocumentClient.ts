@@ -9,9 +9,9 @@ type GetDocumentClientParams = DynamoDBClientParams & {
 }
 
 export function getDocumentClient(
-  params: GetDocumentClientParams,
+  params?: GetDocumentClientParams,
 ): DynamoDB.DocumentClient {
-  const endpoint = params.local ? `http://dynamodb-local:8000` : undefined
+  const endpoint = params?.local ? `http://dynamodb-local:8000` : undefined
 
   return new DynamoDB.DocumentClient({
     endpoint,
