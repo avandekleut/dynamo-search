@@ -2,7 +2,15 @@ import * as EmailValidator from 'email-validator'
 import * as fc from 'fast-check'
 
 import { Obj } from '../obj'
-import { InferConfig, InferNumberConfig, InferStringConfig } from './types'
+import {
+  BooleanCompareFunc,
+  GeneratorFunc,
+  GenericFunction,
+  InferConfig,
+  InferNumberConfig,
+  InferStringConfig,
+  NumericCompareFunc,
+} from './types'
 
 export class PropertyGenerator {
   // TODO: Ensure all inferred arbitraries have length at least 1
@@ -35,6 +43,38 @@ export class PropertyGenerator {
     }
 
     return fc.oneof(...inferredArbitraries) as fc.Arbitrary<T>
+  }
+
+  static inferFunc<T>(
+    obj: GenericFunction,
+  ): fc.Arbitrary<GeneratorFunc<T>> | undefined {
+    try {
+      const result = obj()
+      const inferredResultArbitrary = PropertyGenerator.infer(result)
+      return fc.func(inferredResultArbitrary) as fc.Arbitrary<GeneratorFunc<T>>
+    } catch (err) {
+      return undefined
+    }
+  }
+
+  static isCompareFunc(obj: GenericFunction): obj is NumericCompareFunc {
+    try {
+      return PropertyGenerator.isNumber(obj(0, 1))
+    } catch (err) {
+      return false
+    }
+  }
+
+  static isBooleanCompareFunc(obj: GenericFunction): obj is BooleanCompareFunc {
+    try {
+      return PropertyGenerator.isBoolean(obj(0, 1))
+    } catch (err) {
+      return false
+    }
+  }
+
+  static isFunction(obj: unknown): obj is GenericFunction {
+    return typeof obj === 'function'
   }
 
   static isUndefined(obj: unknown): obj is undefined {
