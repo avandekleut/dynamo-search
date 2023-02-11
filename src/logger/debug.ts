@@ -5,7 +5,7 @@ const logger = LoggerFactory.getInstance()
 /**
  * Decorator factory for class method decorator.
  */
-export function simpleLog() {
+export function debugFactory(verbose = true) {
   return function (
     target: any,
     propertyKey: string,
@@ -14,9 +14,13 @@ export function simpleLog() {
     const targetMethod = descriptor.value
 
     descriptor.value = function (...args: any[]) {
-      logger.log(`Calling ${propertyKey} with args ${args}`)
+      if (verbose) {
+        logger.log(`Calling ${propertyKey} with args ${args}`)
+      }
       const result = targetMethod.apply(this, args)
-      logger.log(`Function returned: ${result}`)
+      if (verbose) {
+        logger.log(`Function returned: ${result}`)
+      }
       return result
     }
   }

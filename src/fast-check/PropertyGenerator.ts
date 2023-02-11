@@ -1,6 +1,6 @@
 import * as EmailValidator from 'email-validator'
 import * as fc from 'fast-check'
-import { simpleLog } from '../logger/simpleLog'
+import { debugFactory } from '../logger/debug'
 
 import {
   BooleanCompareFunction,
@@ -11,6 +11,8 @@ import {
   InferStringConfig,
   NumericCompareFunction,
 } from './types'
+
+const debug = debugFactory()
 
 export class PropertyGenerator {
   static infer<T>(obj: T, config?: InferConfig): fc.Arbitrary<T> {
@@ -113,6 +115,7 @@ export class PropertyGenerator {
     >
   }
 
+  @debug
   static isGeneratorFunction<T>(
     obj: GenericFunction,
   ): obj is GeneratorFunction<T> {
@@ -124,6 +127,7 @@ export class PropertyGenerator {
     }
   }
 
+  @debug
   static isNumericCompareFunction(
     obj: GenericFunction,
   ): obj is NumericCompareFunction {
@@ -134,6 +138,7 @@ export class PropertyGenerator {
     }
   }
 
+  @debug
   static isBooleanCompareFunction(
     obj: GenericFunction,
   ): obj is BooleanCompareFunction {
@@ -144,18 +149,22 @@ export class PropertyGenerator {
     }
   }
 
+  @debug
   static isFunction(obj: unknown): obj is GenericFunction {
     return typeof obj === 'function'
   }
 
+  @debug
   static isUndefined(obj: unknown): obj is undefined {
     return obj === undefined
   }
 
+  @debug
   static isNull(obj: unknown): obj is null {
     return obj === null
   }
 
+  @debug
   static isDate(obj: unknown): obj is Date {
     return obj instanceof Date
   }
@@ -215,10 +224,12 @@ export class PropertyGenerator {
     return PropertyGenerator.getMinimumArbitrary(inferredArbitraries)
   }
 
+  @debug
   static isEmailAddress(obj: string): boolean {
     return EmailValidator.validate(obj)
   }
 
+  @debug
   static isDomain(obj: string): boolean {
     return PropertyGenerator.validateRegex(
       obj,
@@ -226,6 +237,7 @@ export class PropertyGenerator {
     )
   }
 
+  @debug
   static isUuid(obj: string): boolean {
     return PropertyGenerator.validateRegex(
       obj,
@@ -233,6 +245,7 @@ export class PropertyGenerator {
     )
   }
 
+  @debug
   static isIpV6(obj: string): boolean {
     return PropertyGenerator.validateRegex(
       obj,
@@ -240,6 +253,7 @@ export class PropertyGenerator {
     )
   }
 
+  @debug
   static isIpV4(obj: string): boolean {
     return PropertyGenerator.validateRegex(
       obj,
@@ -247,6 +261,7 @@ export class PropertyGenerator {
     )
   }
 
+  @debug
   static isJson(obj: string): boolean {
     try {
       JSON.parse(obj)
@@ -256,10 +271,12 @@ export class PropertyGenerator {
     }
   }
 
+  @debug
   static isHexString(obj: string): boolean {
     return PropertyGenerator.validateRegex(obj, /^[a-fA-F0-9]+$/)
   }
 
+  @debug
   static isBase64String(obj: string): boolean {
     return PropertyGenerator.validateRegex(
       obj,
@@ -267,10 +284,12 @@ export class PropertyGenerator {
     )
   }
 
+  @debug
   static isAsciiString(obj: string): boolean {
     return PropertyGenerator.validateRegex(obj, /[ -~]/)
   }
 
+  @debug
   static isUnicodeString(obj: string): boolean {
     return PropertyGenerator.validateRegex(obj, /^[\u0032-\u007F]+/)
   }
@@ -279,6 +298,7 @@ export class PropertyGenerator {
     return regex.exec(obj) !== null
   }
 
+  @debug
   static isString(obj: unknown): obj is string {
     return typeof obj === 'string'
   }
@@ -304,35 +324,41 @@ export class PropertyGenerator {
     return PropertyGenerator.getMinimumArbitrary(inferredArbitraries)
   }
 
+  @debug
   static isBigInt(obj: unknown): obj is bigint {
     return typeof obj === 'bigint'
   }
 
+  @debug
   static isFloat(obj: number): boolean {
     return Number(obj) === obj && obj % 1 !== 0
   }
 
+  @debug
   static isNat(obj: number): boolean {
     return PropertyGenerator.isInteger(obj) && obj >= 0
   }
-
+  @debug
   static isInteger(obj: number): boolean {
     return Number.isSafeInteger(obj)
   }
 
+  @debug
   static isNumber(obj: unknown): obj is number {
     return Number(obj) === obj
   }
 
-  @simpleLog()
+  @debug
   static isBoolean(obj: unknown): obj is boolean {
     return typeof obj === 'boolean'
   }
 
+  @debug
   static isRecord(obj: unknown): obj is Record<string, unknown> {
     return typeof obj === 'object' && !Array.isArray(obj) && obj !== null
   }
 
+  @debug
   static isArray(obj: unknown): obj is Array<unknown> {
     return typeof obj === 'object' && Array.isArray(obj) && obj !== null
   }
