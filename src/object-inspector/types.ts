@@ -1,28 +1,21 @@
-export interface FlattenableObject {
-  [attributeName: string]:
-    | TerminalType
-    | Array<TerminalType | FlattenableObject>
-    | FlattenableObject
-}
+export type AnyType = DocumentType | TerminalType
 
-export interface FlattenedObject {
-  [attributeName: string]: TerminalType
-}
+export type DocumentType = ListType | MapType
 
-export type DocumentType = Array<unknown> | GenericObject
+export type MapType = Record<string, unknown>
+
+export type ListType = Array<unknown>
 
 export type TerminalType = ScalarType | EmptyType
 
 export type EmptyType = EmptyArray | EmptyObject
 
 const emptyObject = {} as const
-type EmptyObject = typeof emptyObject
+export type EmptyObject = typeof emptyObject
 
 const emptyArray = [] as const
-type EmptyArray = typeof emptyArray
+export type EmptyArray = typeof emptyArray
 
 export type ScalarType = string | number | boolean | null
-
-export type GenericObject = Record<string, unknown>
 
 export type ValueOf<T> = T[keyof T]

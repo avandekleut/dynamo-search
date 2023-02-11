@@ -1,7 +1,11 @@
+import { FlattenableObject } from '../flatten'
 import {
+  DocumentType,
+  EmptyArray,
+  EmptyObject,
   EmptyType,
-  FlattenableObject,
-  GenericObject,
+  ListType,
+  MapType,
   ScalarType,
   TerminalType,
 } from './types'
@@ -10,7 +14,7 @@ export class ObjectInspector {
   static isRecursivelyFlattenableObject(
     object: unknown,
   ): object is FlattenableObject {
-    if (typeof object === 'object' && !ObjectInspector.isEmpty(object)) {
+    if (ObjectInspector.isArray(object) || ObjectInspector.isObject(object)) {
       return true
     }
     return false
@@ -40,19 +44,53 @@ export class ObjectInspector {
 
   static isEmpty(object: unknown): object is EmptyType {
     if (
-      typeof object === 'object' &&
-      object !== null &&
-      Object.keys(object).length === 0
+      ObjectInspector.isEmptyArray(object) ||
+      ObjectInspector.isEmptyObject(object)
     ) {
       return true
     }
     return false
   }
 
-  static isGenericObject(object: unknown): object is GenericObject {
+  static isEmptyArray(object: unknown): object is EmptyArray {
+    if (ObjectInspector.isArray(object) && Object.keys(object).length === 0) {
+      return true
+    }
+    return false
+  }
+
+  static isEmptyObject(object: unknown): object is EmptyObject {
+    if (ObjectInspector.isObject(object) && Object.keys(object).length === 0) {
+      return true
+    }
+    return false
+  }
+
+  static isDocumentType(object: unknown): object is DocumentType {
+    if (
+      (ObjectInspector.isArray(object) || ObjectInspector.isObject(object)) &&
+      !ObjectInspector.isEmpty(object)
+    ) {
+      return true
+    }
+    return false
+  }
+
+  static isObject(object: unknown): object is MapType {
     if (
       typeof object === 'object' &&
       !Array.isArray(object) &&
+      object !== null
+    ) {
+      return true
+    }
+    return false
+  }
+
+  static isArray(object: unknown): object is ListType {
+    if (
+      typeof object === 'object' &&
+      Array.isArray(object) &&
       object !== null
     ) {
       return true

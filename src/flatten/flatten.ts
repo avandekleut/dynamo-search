@@ -1,21 +1,18 @@
-import {
-  FlattenableObject,
-  FlattenedObject,
-  GenericObject,
-} from '../object-inspector'
+import { AnyType } from '../object-inspector'
 import { ObjectInspector } from '../object-inspector/ObjectInspector'
+import { FlattenableObject, FlattenedObject } from './types'
 
 export class Flatten {
   static safeFlatten(object: FlattenableObject): FlattenedObject {
     return Flatten.flatten(object)
   }
 
-  static flatten(object: GenericObject): FlattenedObject {
+  static flatten(object: AnyType): FlattenedObject {
     return Flatten.flattenRecursively(object, undefined, {})
   }
 
   private static flattenRecursively(
-    object: GenericObject,
+    object: AnyType,
     prefix: string | undefined = undefined,
     result: FlattenedObject,
   ): FlattenedObject {
