@@ -1,13 +1,12 @@
 import {
-  EmptyType,
+  FlattenableObject,
   FlattenedObject,
-  ScalarType,
-  TypesafeFlattenableObject,
   UnsafeFlattenableObject,
-} from './types'
+} from '../object-inspector'
+import { ObjectInspector } from '../object-inspector/ObjectInspector'
 
 export class Flatten {
-  static safeFlatten(object: TypesafeFlattenableObject): FlattenedObject {
+  static safeFlatten(object: FlattenableObject): FlattenedObject {
     return Flatten.flatten(object)
   }
 
@@ -21,8 +20,8 @@ export class Flatten {
     result: FlattenedObject,
   ): FlattenedObject {
     // Preserve empty objects and arrays, they are lost otherwise
-    if (prefix && Flatten.isEmpty(object)) {
-      result[prefix] = Array.isArray(object) ? [] : {}
+    if (prefix && ObjectInspector.isTerminalType(object)) {
+      result[prefix] = object
       return result
     }
 
@@ -32,56 +31,14 @@ export class Flatten {
       if (Object.prototype.hasOwnProperty.call(object, key)) {
         const subObject = object[key]
 
-        if (Flatten.isRecursivelyFlattenableObject(subObject)) {
+        if (ObjectInspector.isRecursivelyFlattenableObject(subObject)) {
           Flatten.flattenRecursively(subObject, prefix + key, result)
-        } else if (Flatten.isScalarType(subObject)) {
+        } else if (ObjectInspector.isTerminalType(subObject)) {
           result[prefix + key] = subObject
         }
       }
     }
 
     return result
-  }
-
-  /**
-   * // TODO: Parse and fix this comment...
-   * Drops custom classes like Dates, etc
-   */
-  static isRecursivelyFlattenableObject(
-    object: unknown,
-  ): object is TypesafeFlattenableObject {
-    if (
-      typeof object === 'object' &&
-      (Array.isArray(object) ||
-        Object.prototype.toString.call(object) === '[object Object]') &&
-      object !== null
-    ) {
-      return true
-    }
-    return false
-  }
-
-  static isScalarType(object: unknown): object is ScalarType {
-    if (
-      typeof object === 'string' ||
-      typeof object === 'number' ||
-      typeof object === 'bigint' ||
-      typeof object === 'boolean' ||
-      Flatten.isEmpty(object)
-    ) {
-      return true
-    }
-    return false
-  }
-
-  static isEmpty(object: unknown): object is EmptyType {
-    if (
-      typeof object === 'object' &&
-      object !== null &&
-      Object.keys(object).length === 0
-    ) {
-      return true
-    }
-    return false
   }
 }

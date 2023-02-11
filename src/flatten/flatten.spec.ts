@@ -84,7 +84,6 @@ describe('Flatten.flatten', () => {
 
   it('handles edge cases', () => {
     const flattened = Flatten.flatten(largeObjectWithDotsInAttributeNames)
-    console.log({ flattened })
 
     expect(flattened).toHaveProperty('not_lost', [])
     expect(flattened).toHaveProperty('not_lost2', {})
