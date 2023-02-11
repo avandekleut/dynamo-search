@@ -68,7 +68,11 @@ export class PropertyGenerator {
       return fc.record(result) as fc.Arbitrary<T>
     }
 
-    return fc.oneof(...inferredArbitraries) as fc.Arbitrary<T>
+    return PropertyGenerator.getMinimumArbitrary(
+      inferredArbitraries,
+    ) as fc.Arbitrary<T>
+
+    // return fc.oneof(...inferredArbitraries) as fc.Arbitrary<T>
   }
 
   static inferFunction(
@@ -317,7 +321,7 @@ export class PropertyGenerator {
     return typeof obj === 'object' && Array.isArray(obj) && obj !== null
   }
 
-  private static getMinimumArbitrary<T>(
+  static getMinimumArbitrary<T>(
     inferredArbitraries: Array<fc.Arbitrary<T>>,
   ): fc.Arbitrary<T> | undefined {
     if (inferredArbitraries.length === 0) {

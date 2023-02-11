@@ -2,7 +2,6 @@ import * as fc from 'fast-check'
 
 import { expect } from '@jest/globals'
 
-import { LoggerFactory } from '../logger/LoggerFactory'
 import { PropertyGenerator } from './PropertyGenerator'
 
 function convertArbitraryToObject(
@@ -45,15 +44,50 @@ describe('PropertyGenerator infers from sampled arbitraries', () => {
     fc.func(arbitrary),
   )
 
-  test('boolean', () => {
-    const booleanArbitrary = fc.boolean()
-    const booleanExample = fc.sample(booleanArbitrary)
-    const inferredArbitrary = PropertyGenerator.infer(booleanExample)
+  test('stringifying arbitraries makes them unique', () => {
+    const converted = testableArbitraries.map((arbitrary) =>
+      JSON.stringify(convertArbitraryToObject(arbitrary)),
+    )
+    expect(new Set(converted).size).toEqual(converted.length)
+  })
 
-    const logger = LoggerFactory.getInstance()
-    // expect(convertArbitraryToObject(inferredArbitrary)).toMatchObject(
-    //   convertArbitraryToObject(booleanArbitrary),
-    // )
+  test('basic boolean', () => {
+    const arbitrary = fc.boolean()
+    expect(JSON.stringify(arbitrary)).toEqual(
+      JSON.stringify(PropertyGenerator.infer(fc.sample(arbitrary)[0])),
+    )
+  })
+
+  test('all basic arbitraries invertible', () => {
+    for (const arbitrary of testableArbitraries) {
+      const sampled = fc.sample(arbitrary)[0]
+      const inferredArbitrary = PropertyGenerator.infer(sampled)
+      expect(JSON.stringify(arbitrary)).toEqual(
+        JSON.stringify(inferredArbitrary),
+      )
+    }
+  })
+
+  test.skip('isBoolean', () => {
+    fc.assert(
+      fc.property(fc.boolean(), (a) => {
+        expect(PropertyGenerator.isBoolean(a)).toBe(true)
+        expect(PropertyGenerator.isNumber(a)).toBe(false)
+        expect(PropertyGenerator.isString(a)).toBe(false)
+        expect(PropertyGenerator.isArray(a)).toBe(false)
+        expect(PropertyGenerator.isRecord(a)).toBe(false)
+      }),
+    )
+  })
+
+  test.skip('infer boolean', () => {
+    fc.assert(
+      fc.property(fc.boolean(), (a) => {
+        const inferred = PropertyGenerator.infer(a)
+        const sampled = fc.sample(inferred)
+        expect(PropertyGenerator.isBoolean(sampled[0])).toBe(true)
+      }),
+    )
   })
 
   test.skip('identity', () => {
