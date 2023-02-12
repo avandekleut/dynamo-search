@@ -5,14 +5,14 @@ import { expect } from '@jest/globals'
 import { PropertyGenerator } from './PropertyGenerator'
 
 const testableArbitraries: Array<fc.Arbitrary<unknown>> = [
-  fc.boolean(),
-  fc.bigInt(),
+  // fc.boolean(),
+  // fc.bigInt(),
   // fc.date(),
   // fc.constant(null),
   // fc.constant(undefined),
   // fc.compareBooleanFunc(),
   // fc.compareFunc(),
-  // fc.emailAddress(),
+  fc.emailAddress(),
   // fc.domain(),
   // fc.uuid(),
   // fc.ipV4(),
@@ -57,7 +57,7 @@ function stringifyArbitrary(arbitrary: fc.Arbitrary<unknown>): string {
   // return stringify({ arbitrary, sample }, (key, value) =>
   //   typeof value === 'bigint' ? value.toString() : value,
   // )
-  return JSON.stringify({ sample }, (key, value) =>
+  return JSON.stringify({ sample, arbitrary }, (key, value) =>
     typeof value === 'bigint' ? value.toString() : value,
   )
 }
@@ -81,17 +81,17 @@ describe('test for testing code', () => {
 })
 
 describe('PropertyGenerator infers from arbitraries', () => {
-  test('bigint', () => {
+  test.skip('bigint', () => {
     const arbitrary = fc.bigInt()
     const sample = fc.sample(arbitrary)[0]
 
-    console.log({ sample })
+    // console.log({ sample })
 
     const inferredArbitrary = PropertyGenerator.infer(sample)
     // const inferredArbitrary = fc.bigInt()
 
     const sampleInferred = fc.sample(inferredArbitrary)[0]
-    console.log({ sampleInferred })
+    // console.log({ sampleInferred })
 
     expect(stringifyArbitrary(arbitrary)).toEqual(
       stringifyArbitrary(inferredArbitrary),

@@ -6,52 +6,53 @@ import {
   BooleanCompareFunction,
   GeneratorFunction,
   GenericFunction,
-  InferConfig,
-  InferNumberConfig,
-  InferStringConfig,
   NumericCompareFunction,
 } from './types'
 
 const debug = debugFactory()
 
 export class PropertyGenerator {
-  static infer<T>(obj: T, config?: InferConfig): fc.Arbitrary<T> {
-    const inferredArbitraries: Array<fc.Arbitrary<unknown>> = []
-
+  // TODO: Change generics from type level to function level
+  static infer<T>(
+    obj: T,
+    config = {
+      inferMostSpecificStringType: false,
+    },
+  ): fc.Arbitrary<T> {
     if (PropertyGenerator.isBoolean(obj)) {
-      inferredArbitraries.push(fc.boolean())
+      return fc.boolean() as fc.Arbitrary<T>
     }
 
     if (PropertyGenerator.isBigInt(obj)) {
-      inferredArbitraries.push(fc.bigInt())
+      return fc.bigInt() as fc.Arbitrary<T>
     }
 
     if (PropertyGenerator.isDate(obj)) {
-      inferredArbitraries.push(fc.date())
+      return fc.date() as fc.Arbitrary<T>
     }
 
     if (PropertyGenerator.isNull(obj) || PropertyGenerator.isUndefined(obj)) {
-      inferredArbitraries.push(fc.constant(obj))
+      return fc.constant(obj) as fc.Arbitrary<T>
     }
 
     if (PropertyGenerator.isNumber(obj)) {
-      const inferredNumberArbitrary = PropertyGenerator.inferNumber(obj, config)
+      const inferredNumberArbitrary = PropertyGenerator.inferNumber(obj)
       if (inferredNumberArbitrary) {
-        inferredArbitraries.push(inferredNumberArbitrary)
+        return inferredNumberArbitrary as fc.Arbitrary<T>
       }
     }
 
     if (PropertyGenerator.isString(obj)) {
-      const inferredStringArbitrary = PropertyGenerator.inferString(obj, config)
+      const inferredStringArbitrary = PropertyGenerator.inferString(obj)
       if (inferredStringArbitrary) {
-        inferredArbitraries.push(inferredStringArbitrary)
+        return inferredStringArbitrary as fc.Arbitrary<T>
       }
     }
 
     if (PropertyGenerator.isFunction(obj)) {
       const inferredFunctionArbitrary = PropertyGenerator.inferFunction(obj)
       if (inferredFunctionArbitrary) {
-        inferredArbitraries.push(inferredFunctionArbitrary)
+        return inferredFunctionArbitrary as fc.Arbitrary<T>
       }
     }
 
@@ -59,7 +60,7 @@ export class PropertyGenerator {
       const inferredArbitrary = fc.array(
         fc.oneof(...obj.map((item) => PropertyGenerator.infer(item))),
       )
-      inferredArbitraries.push(inferredArbitrary)
+      return inferredArbitrary as fc.Arbitrary<T>
     }
 
     if (PropertyGenerator.isRecord(obj)) {
@@ -70,15 +71,7 @@ export class PropertyGenerator {
       return fc.record(result) as fc.Arbitrary<T>
     }
 
-    const minimumArbitrary = PropertyGenerator.getMinimumArbitrary(
-      inferredArbitraries,
-    ) as fc.Arbitrary<T> | undefined
-
-    if (minimumArbitrary === undefined) {
-      throw new Error(`Could not infer ${obj}`)
-    }
-
-    return minimumArbitrary
+    throw new Error(`Failed to infer arbitrary for ${obj}`)
   }
 
   static inferFunction(
@@ -87,22 +80,22 @@ export class PropertyGenerator {
     const inferredArbitraries: Array<fc.Arbitrary<GenericFunction>> = []
 
     if (PropertyGenerator.isBooleanCompareFunction(obj)) {
-      inferredArbitraries.push(fc.compareBooleanFunc())
+      return fc.compareBooleanFunc()
     }
 
     if (PropertyGenerator.isNumericCompareFunction(obj)) {
-      inferredArbitraries.push(fc.compareFunc())
+      return fc.compareFunc()
     }
 
     if (PropertyGenerator.isGeneratorFunction(obj)) {
       const inferredFunctionArbitrary =
         PropertyGenerator.inferGeneratorFunc(obj)
       if (inferredFunctionArbitrary) {
-        inferredArbitraries.push(inferredFunctionArbitrary)
+        return inferredFunctionArbitrary
       }
     }
 
-    return PropertyGenerator.getMinimumArbitrary(inferredArbitraries)
+    return undefined
   }
 
   static inferGeneratorFunc<T>(
@@ -169,59 +162,52 @@ export class PropertyGenerator {
     return obj instanceof Date
   }
 
-  static inferString(
-    obj: string,
-    config?: InferStringConfig,
-  ): fc.Arbitrary<string> | undefined {
-    const inferredArbitraries: Array<fc.Arbitrary<string>> = []
-
-    const returnAll = !config?.inferMostSpecificStringType
-
-    if (PropertyGenerator.isEmailAddress(obj) && returnAll) {
-      inferredArbitraries.push(fc.emailAddress())
+  static inferString(obj: string): fc.Arbitrary<string> | undefined {
+    if (PropertyGenerator.isEmailAddress(obj)) {
+      return fc.emailAddress()
     }
 
-    if (PropertyGenerator.isDomain(obj) && returnAll) {
-      inferredArbitraries.push(fc.domain())
+    if (PropertyGenerator.isDomain(obj)) {
+      return fc.domain()
     }
 
-    if (PropertyGenerator.isUuid(obj) && returnAll) {
-      inferredArbitraries.push(fc.uuid())
+    if (PropertyGenerator.isUuid(obj)) {
+      return fc.uuid()
     }
 
-    if (PropertyGenerator.isIpV6(obj) && returnAll) {
-      inferredArbitraries.push(fc.ipV6())
+    if (PropertyGenerator.isIpV6(obj)) {
+      return fc.ipV6()
     }
 
-    if (PropertyGenerator.isIpV4(obj) && returnAll) {
-      inferredArbitraries.push(fc.ipV4())
+    if (PropertyGenerator.isIpV4(obj)) {
+      return fc.ipV4()
     }
 
-    if (PropertyGenerator.isJson(obj) && returnAll) {
-      inferredArbitraries.push(fc.json())
+    if (PropertyGenerator.isJson(obj)) {
+      return fc.json()
     }
 
-    if (PropertyGenerator.isHexString(obj) && returnAll) {
-      inferredArbitraries.push(fc.hexaString())
+    if (PropertyGenerator.isHexString(obj)) {
+      return fc.hexaString()
     }
 
-    if (PropertyGenerator.isBase64String(obj) && returnAll) {
-      inferredArbitraries.push(fc.base64String())
+    if (PropertyGenerator.isBase64String(obj)) {
+      return fc.base64String()
     }
 
-    if (PropertyGenerator.isAsciiString(obj) && returnAll) {
-      inferredArbitraries.push(fc.asciiString())
+    if (PropertyGenerator.isAsciiString(obj)) {
+      return fc.asciiString()
     }
 
-    if (PropertyGenerator.isUnicodeString(obj) && returnAll) {
-      inferredArbitraries.push(fc.unicodeString())
+    if (PropertyGenerator.isUnicodeString(obj)) {
+      return fc.unicodeString()
     }
 
-    if (PropertyGenerator.isString(obj) && returnAll) {
-      inferredArbitraries.push(fc.string())
+    if (PropertyGenerator.isString(obj)) {
+      return fc.string()
     }
 
-    return PropertyGenerator.getMinimumArbitrary(inferredArbitraries)
+    return undefined
   }
 
   @debug
@@ -303,25 +289,20 @@ export class PropertyGenerator {
     return typeof obj === 'string'
   }
 
-  static inferNumber(
-    obj: number,
-    config?: InferNumberConfig,
-  ): fc.Arbitrary<number> | undefined {
-    const inferredArbitraries: Array<fc.Arbitrary<number>> = []
+  static inferNumber(obj: number): fc.Arbitrary<number> | undefined {
+    if (PropertyGenerator.isNat(obj)) {
+      return fc.nat()
+    }
 
     if (PropertyGenerator.isInteger(obj)) {
-      inferredArbitraries.push(fc.integer())
+      return fc.integer()
     }
 
-    if (PropertyGenerator.isNat(obj)) {
-      inferredArbitraries.push(fc.nat())
+    if (PropertyGenerator.isDouble(obj)) {
+      return fc.double()
     }
 
-    if (PropertyGenerator.isFloat(obj)) {
-      inferredArbitraries.push(fc.double())
-    }
-
-    return PropertyGenerator.getMinimumArbitrary(inferredArbitraries)
+    return undefined
   }
 
   @debug
@@ -330,7 +311,7 @@ export class PropertyGenerator {
   }
 
   @debug
-  static isFloat(obj: number): boolean {
+  static isDouble(obj: number): boolean {
     return Number(obj) === obj && obj % 1 !== 0
   }
 
@@ -366,19 +347,5 @@ export class PropertyGenerator {
   @debug
   static isArray(obj: unknown): obj is Array<unknown> {
     return typeof obj === 'object' && Array.isArray(obj) && obj !== null
-  }
-
-  static getMinimumArbitrary<T>(
-    inferredArbitraries: Array<fc.Arbitrary<T>>,
-  ): fc.Arbitrary<T> | undefined {
-    if (inferredArbitraries.length === 0) {
-      return undefined
-    }
-
-    if (inferredArbitraries.length === 1) {
-      return inferredArbitraries[0]
-    }
-
-    return fc.oneof(...inferredArbitraries) as fc.Arbitrary<T>
   }
 }

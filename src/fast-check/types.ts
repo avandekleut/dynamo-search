@@ -1,16 +1,3 @@
-export type InferConfig = InferStringConfig &
-  InferNumberConfig & {
-    verbose: false
-  }
-
-export type InferStringConfig = {
-  inferMostSpecificStringType?: boolean
-}
-
-export type InferNumberConfig = EmptyConfig
-
-export type EmptyConfig = Record<string, never>
-
 export type InferrableFunction<T> =
   | GeneratorFunction<T>
   | BooleanCompareFunction
