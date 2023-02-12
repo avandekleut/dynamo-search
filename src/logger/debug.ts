@@ -11,10 +11,17 @@ export function debugFactory(verbose = true) {
     propertyKey: string,
     descriptor: PropertyDescriptor,
   ) {
+    console.log('registering debugFactory')
+
     const targetMethod = descriptor.value
 
+    console.log(`targetMethod: ${targetMethod}`)
+
     descriptor.value = function (...args: any[]) {
+      logger.log(`${propertyKey}(${args})`)
+
       const result = targetMethod.apply(this, args)
+
       if (verbose) {
         logger.log(`${propertyKey}(${args}) = ${result}`)
       }

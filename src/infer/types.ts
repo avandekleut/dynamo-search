@@ -1,6 +1,8 @@
 import * as fc from 'fast-check'
 
-export type FcConfig = {
+export type InferConfig = Partial<InferConfigInternal>
+
+export type InferConfigInternal = {
   stringSharedConstraints: fc.StringSharedConstraints
   jsonSharedConstraints: fc.JsonSharedConstraints
   bigIntConstraints: fc.BigIntConstraints
@@ -11,18 +13,3 @@ export type FcConfig = {
   integerConstraints: fc.IntegerConstraints
   doubleConstraints: fc.DoubleConstraints
 }
-
-export type InferrableFunction<T> =
-  | GeneratorFunction<T>
-  | BooleanCompareFunction
-  | NumericCompareFunction
-
-export type GeneratorFunction<T> = () => T
-
-export type BooleanCompareFunction = CompareFunc<boolean>
-
-export type NumericCompareFunction = CompareFunc<number>
-
-export type CompareFunc<T> = (a: unknown, b: unknown) => T
-
-export type GenericFunction = (...args: unknown[]) => unknown
