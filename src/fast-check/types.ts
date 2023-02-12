@@ -1,3 +1,17 @@
+import * as fc from 'fast-check'
+
+export type FcConfig = {
+  stringSharedConstraints: fc.StringSharedConstraints
+  jsonSharedConstraints: fc.JsonSharedConstraints
+  bigIntConstraints: fc.BigIntConstraints
+  dateConstraints: fc.DateConstraints
+  emailAddressConstraints: fc.EmailAddressConstraints
+  domainConstraints: fc.DomainConstraints
+  natConstraints: fc.NatConstraints
+  integerConstraints: fc.IntegerConstraints
+  doubleConstraints: fc.DoubleConstraints
+}
+
 export type InferrableFunction<T> =
   | GeneratorFunction<T>
   | BooleanCompareFunction

@@ -22,14 +22,15 @@
   },
   "dependencies": {
     "aws-sdk": "^2.1313.0",
-    "email-validator": "^2.0.4",
     "flatted": "^3.2.7",
     "pino": "^8.10.0",
-    "tslib": "~2.4"
+    "tslib": "~2.4",
+    "validator": "^13.9.0"
   },
   "devDependencies": {
     "@types/jest": "~29.2",
     "@types/node": "~18",
+    "@types/validator": "^13.7.12",
     "@typescript-eslint/eslint-plugin": "~5.44",
     "@typescript-eslint/parser": "~5.44",
     "eslint": "~8.28",

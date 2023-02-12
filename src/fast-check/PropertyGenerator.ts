@@ -1,19 +1,37 @@
-import * as EmailValidator from 'email-validator'
 import * as fc from 'fast-check'
+import validator from 'validator'
 import { debugFactory } from '../logger/debug'
 
 import {
   BooleanCompareFunction,
+  Config,
+  FcConfig,
   GeneratorFunction,
   GenericFunction,
   NumericCompareFunction,
 } from './types'
 
-const debug = debugFactory()
+const debug = debugFactory(true)
 
 export class PropertyGenerator {
+  private readonly config: FcConfig
+
+  constructor(config: Config) {
+    this.config = {
+      stringSharedConstraints: config.stringSharedConstraints ?? {},
+      jsonSharedConstraints: config.jsonSharedConstraints ?? {},
+      bigIntConstraints: config.bigIntConstraints ?? {},
+      dateConstraints: config.dateConstraints ?? {},
+      emailAddressConstraints: config.emailAddressConstraints ?? {},
+      domainConstraints: config.domainConstraints ?? {},
+      natConstraints: config.natConstraints ?? {},
+      integerConstraints: config.integerConstraints ?? {},
+      doubleConstraints: config.doubleConstraints ?? {},
+    }
+  }
+
   // TODO: Change generics from type level to function level
-  static infer<T>(
+  infer<T>(
     obj: T,
     config = {
       inferMostSpecificStringType: false,
@@ -24,11 +42,11 @@ export class PropertyGenerator {
     }
 
     if (PropertyGenerator.isBigInt(obj)) {
-      return fc.bigInt() as fc.Arbitrary<T>
+      return fc.bigInt(this.config.bigIntConstraints) as fc.Arbitrary<T>
     }
 
     if (PropertyGenerator.isDate(obj)) {
-      return fc.date() as fc.Arbitrary<T>
+      return fc.date(this.config.dateConstraints) as fc.Arbitrary<T>
     }
 
     if (PropertyGenerator.isNull(obj) || PropertyGenerator.isUndefined(obj)) {
@@ -36,49 +54,38 @@ export class PropertyGenerator {
     }
 
     if (PropertyGenerator.isNumber(obj)) {
-      const inferredNumberArbitrary = PropertyGenerator.inferNumber(obj)
+      const inferredNumberArbitrary = this.inferNumber(obj)
       if (inferredNumberArbitrary) {
         return inferredNumberArbitrary as fc.Arbitrary<T>
       }
     }
 
     if (PropertyGenerator.isString(obj)) {
-      const inferredStringArbitrary = PropertyGenerator.inferString(obj)
-      if (inferredStringArbitrary) {
-        return inferredStringArbitrary as fc.Arbitrary<T>
-      }
+      return this.inferString(obj) as fc.Arbitrary<T>
     }
 
     if (PropertyGenerator.isFunction(obj)) {
-      const inferredFunctionArbitrary = PropertyGenerator.inferFunction(obj)
-      if (inferredFunctionArbitrary) {
-        return inferredFunctionArbitrary as fc.Arbitrary<T>
-      }
+      return this.inferFunction(obj) as fc.Arbitrary<T>
     }
 
     if (PropertyGenerator.isArray(obj)) {
-      const inferredArbitrary = fc.array(
-        fc.oneof(...obj.map((item) => PropertyGenerator.infer(item))),
-      )
-      return inferredArbitrary as fc.Arbitrary<T>
+      return fc.array(
+        fc.oneof(...obj.map((item) => this.infer(item))),
+      ) as fc.Arbitrary<T>
     }
 
     if (PropertyGenerator.isRecord(obj)) {
       const result: Record<string, fc.Arbitrary<unknown>> = {}
-      Object.keys(obj).forEach(function (key, index) {
-        result[key] = PropertyGenerator.infer(obj[key])
-      })
+      for (const key of Object.keys(obj)) {
+        result[key] = this.infer(obj[key])
+      }
       return fc.record(result) as fc.Arbitrary<T>
     }
 
     throw new Error(`Failed to infer arbitrary for ${obj}`)
   }
 
-  static inferFunction(
-    obj: GenericFunction,
-  ): fc.Arbitrary<GenericFunction> | undefined {
-    const inferredArbitraries: Array<fc.Arbitrary<GenericFunction>> = []
-
+  inferFunction(obj: GenericFunction): fc.Arbitrary<GenericFunction> {
     if (PropertyGenerator.isBooleanCompareFunction(obj)) {
       return fc.compareBooleanFunc()
     }
@@ -88,21 +95,20 @@ export class PropertyGenerator {
     }
 
     if (PropertyGenerator.isGeneratorFunction(obj)) {
-      const inferredFunctionArbitrary =
-        PropertyGenerator.inferGeneratorFunc(obj)
+      const inferredFunctionArbitrary = this.inferGeneratorFunc(obj)
       if (inferredFunctionArbitrary) {
         return inferredFunctionArbitrary
       }
     }
 
-    return undefined
+    throw new Error(`Failed to infer function: ${obj}`)
   }
 
-  static inferGeneratorFunc<T>(
+  inferGeneratorFunc<T>(
     obj: GeneratorFunction<T>,
   ): fc.Arbitrary<GeneratorFunction<T>> | undefined {
     const result = obj()
-    const inferredResultArbitrary = PropertyGenerator.infer(result)
+    const inferredResultArbitrary = this.infer(result)
     return fc.func(inferredResultArbitrary) as fc.Arbitrary<
       GeneratorFunction<T>
     >
@@ -162,13 +168,13 @@ export class PropertyGenerator {
     return obj instanceof Date
   }
 
-  static inferString(obj: string): fc.Arbitrary<string> | undefined {
+  inferString(obj: string): fc.Arbitrary<string> {
     if (PropertyGenerator.isEmailAddress(obj)) {
-      return fc.emailAddress()
+      return fc.emailAddress(this.config.emailAddressConstraints)
     }
 
     if (PropertyGenerator.isDomain(obj)) {
-      return fc.domain()
+      return fc.domain(this.config.domainConstraints)
     }
 
     if (PropertyGenerator.isUuid(obj)) {
@@ -183,36 +189,32 @@ export class PropertyGenerator {
       return fc.ipV4()
     }
 
-    if (PropertyGenerator.isJson(obj)) {
-      return fc.json()
-    }
-
     if (PropertyGenerator.isHexString(obj)) {
-      return fc.hexaString()
+      return fc.hexaString(this.config.stringSharedConstraints)
     }
 
     if (PropertyGenerator.isBase64String(obj)) {
-      return fc.base64String()
+      return fc.base64String(this.config.stringSharedConstraints)
     }
 
     if (PropertyGenerator.isAsciiString(obj)) {
-      return fc.asciiString()
+      return fc.asciiString(this.config.stringSharedConstraints)
     }
 
     if (PropertyGenerator.isUnicodeString(obj)) {
-      return fc.unicodeString()
+      return fc.unicodeString(this.config.stringSharedConstraints)
     }
 
-    if (PropertyGenerator.isString(obj)) {
-      return fc.string()
+    if (PropertyGenerator.isJson(obj)) {
+      return fc.json(this.config.jsonSharedConstraints)
     }
 
-    return undefined
+    return fc.string(this.config.stringSharedConstraints)
   }
 
   @debug
   static isEmailAddress(obj: string): boolean {
-    return EmailValidator.validate(obj)
+    return validator.isEmail(obj)
   }
 
   @debug
@@ -272,12 +274,14 @@ export class PropertyGenerator {
 
   @debug
   static isAsciiString(obj: string): boolean {
-    return PropertyGenerator.validateRegex(obj, /[ -~]/)
+    // eslint-disable-next-line no-control-regex
+    return PropertyGenerator.validateRegex(obj, /^[\x00-\x7F]+$/)
   }
 
   @debug
   static isUnicodeString(obj: string): boolean {
-    return PropertyGenerator.validateRegex(obj, /^[\u0032-\u007F]+/)
+    // eslint-disable-next-line no-control-regex
+    return PropertyGenerator.validateRegex(obj, /^[\u0000-\u007F]+$/)
   }
 
   private static validateRegex(obj: string, regex: RegExp): boolean {
@@ -289,20 +293,20 @@ export class PropertyGenerator {
     return typeof obj === 'string'
   }
 
-  static inferNumber(obj: number): fc.Arbitrary<number> | undefined {
+  inferNumber(obj: number): fc.Arbitrary<number> {
     if (PropertyGenerator.isNat(obj)) {
-      return fc.nat()
+      return fc.nat(this.config.natConstraints)
     }
 
     if (PropertyGenerator.isInteger(obj)) {
-      return fc.integer()
+      return fc.integer(this.config.integerConstraints)
     }
 
     if (PropertyGenerator.isDouble(obj)) {
-      return fc.double()
+      return fc.double(this.config.doubleConstraints)
     }
 
-    return undefined
+    throw new Error(`Failed to infer number: ${obj}`)
   }
 
   @debug

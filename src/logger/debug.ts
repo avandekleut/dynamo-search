@@ -14,12 +14,9 @@ export function debugFactory(verbose = true) {
     const targetMethod = descriptor.value
 
     descriptor.value = function (...args: any[]) {
-      if (verbose) {
-        logger.log(`Calling ${propertyKey}(${args})`)
-      }
       const result = targetMethod.apply(this, args)
       if (verbose) {
-        logger.log(`Function returned: ${result}`)
+        logger.log(`${propertyKey}(${args}) = ${result}`)
       }
       return result
     }

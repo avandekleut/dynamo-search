@@ -2,35 +2,45 @@ import * as fc from 'fast-check'
 
 import { expect } from '@jest/globals'
 
+import { stringify } from 'flatted'
 import { PropertyGenerator } from './PropertyGenerator'
+import { Config } from './types'
 
-const testableArbitraries: Array<fc.Arbitrary<unknown>> = [
-  // fc.boolean(),
-  // fc.bigInt(),
-  // fc.date(),
-  // fc.constant(null),
-  // fc.constant(undefined),
-  // fc.compareBooleanFunc(),
-  // fc.compareFunc(),
-  fc.emailAddress(),
-  // fc.domain(),
-  // fc.uuid(),
-  // fc.ipV4(),
-  // fc.ipV6(),
-  // fc.json(),
-  // fc.hexaString(),
-  // fc.base64String(),
-  // fc.asciiString(),
-  // fc.unicodeString(),
-  // fc.string(),
-  // fc.nat(),
-  // fc.integer(),
-  // fc.double(),
+const testConfig: Config = {
+  stringSharedConstraints: {
+    minLength: 1,
+  },
+}
+
+const propertyGenerator = new PropertyGenerator(testConfig)
+
+const arbitraryFactories: Array<() => fc.Arbitrary<unknown>> = [
+  // () => fc.boolean(),
+  // () => fc.bigInt(),
+  // () => fc.date(),
+  // () => fc.constant(null),
+  // () => fc.constant(undefined),
+  // () => fc.compareBooleanFunc(),
+  // () => fc.compareFunc(),
+  () => fc.emailAddress(), // TODO: Fix
+  // () => fc.domain(),
+  // () => fc.uuid(),
+  // () => fc.ipV4(),
+  // () => fc.ipV6(), // TODO: Fix
+  // () => fc.json(),
+  // () => fc.hexaString(testConfig.stringSharedConstraints),
+  // () => fc.base64String(testConfig.stringSharedConstraints),
+  // () => fc.asciiString(testConfig.stringSharedConstraints),
+  // () => fc.unicodeString(testConfig.stringSharedConstraints),
+  // () => fc.string(testConfig.stringSharedConstraints),
+  // () => fc.nat(),
+  // () => fc.integer(),
+  // () => fc.double(),
 ]
 
-const testableArbitariesFuncs = testableArbitraries.map((arbitrary) =>
-  fc.func(arbitrary),
-)
+// const testableArbitariesFuncs = arbitraryFactories.map((arbitraryFactory) =>
+//   () => fc.func(arbitraryFactory()),
+// )
 
 function generateRepresentativeSample(
   arbitrary: fc.Arbitrary<unknown>,
@@ -54,17 +64,18 @@ function generateRepresentativeSample(
 function stringifyArbitrary(arbitrary: fc.Arbitrary<unknown>): string {
   const sample = generateRepresentativeSample(arbitrary)
 
-  // return stringify({ arbitrary, sample }, (key, value) =>
-  //   typeof value === 'bigint' ? value.toString() : value,
-  // )
-  return JSON.stringify({ sample, arbitrary }, (key, value) =>
+  return stringify({ arbitrary, sample }, (key, value) =>
     typeof value === 'bigint' ? value.toString() : value,
   )
+  // return JSON.stringify({ sample, arbitrary }, (key, value) =>
+  //   typeof value === 'bigint' ? value.toString() : value,
+  // )
 }
 
 describe('test for testing code', () => {
   test('generating a representative sample is consistent', () => {
-    for (const arbitrary of testableArbitraries) {
+    for (const arbitraryFactory of arbitraryFactories) {
+      const arbitrary = arbitraryFactory()
       expect(generateRepresentativeSample(arbitrary)).toEqual(
         generateRepresentativeSample(arbitrary),
       )
@@ -72,39 +83,42 @@ describe('test for testing code', () => {
   })
 
   test('stringifying arbitraries makes them unique', () => {
-    const converted = testableArbitraries.map((arbitrary) =>
-      stringifyArbitrary(arbitrary),
-    )
+    const converted = arbitraryFactories.map((arbitraryFactory) => {
+      const arbitrary = arbitraryFactory()
+      return stringifyArbitrary(arbitrary)
+    })
 
     expect(new Set(converted).size).toEqual(converted.length)
+  })
+
+  test('stringification is independent of arbitrary instance', () => {
+    for (const arbitraryFactory of arbitraryFactories) {
+      expect(stringifyArbitrary(arbitraryFactory())).toEqual(
+        stringifyArbitrary(arbitraryFactory()),
+      )
+    }
   })
 })
 
 describe('PropertyGenerator infers from arbitraries', () => {
-  test.skip('bigint', () => {
-    const arbitrary = fc.bigInt()
-    const sample = fc.sample(arbitrary)[0]
-
-    // console.log({ sample })
-
-    const inferredArbitrary = PropertyGenerator.infer(sample)
-    // const inferredArbitrary = fc.bigInt()
-
-    const sampleInferred = fc.sample(inferredArbitrary)[0]
-    // console.log({ sampleInferred })
-
-    expect(stringifyArbitrary(arbitrary)).toEqual(
-      stringifyArbitrary(inferredArbitrary),
-    )
+  test('email counterexample', () => {
+    const email = '`a.a@a.aa'
+    const arbitrary = fc.emailAddress()
+    const inferred = propertyGenerator.infer(email)
+    expect(stringifyArbitrary(arbitrary)).toEqual(stringifyArbitrary(inferred))
   })
 
-  test('all basic arbitraries invertible', () => {
-    for (const arbitrary of testableArbitraries) {
-      const sample = fc.sample(arbitrary)[0]
-      const inferredArbitrary = PropertyGenerator.infer(sample)
+  test.skip('all basic arbitraries invertible', () => {
+    for (const arbitraryFactory of arbitraryFactories) {
+      const arbitrary = arbitraryFactory()
+      fc.assert(
+        fc.property(arbitrary, (a) => {
+          const inferredArbitrary = propertyGenerator.infer(a)
 
-      expect(stringifyArbitrary(arbitrary)).toEqual(
-        stringifyArbitrary(inferredArbitrary),
+          expect(stringifyArbitrary(arbitrary)).toEqual(
+            stringifyArbitrary(inferredArbitrary),
+          )
+        }),
       )
     }
   })
@@ -124,7 +138,7 @@ describe('PropertyGenerator infers from arbitraries', () => {
   test.skip('infer boolean', () => {
     fc.assert(
       fc.property(fc.boolean(), (a) => {
-        const inferred = PropertyGenerator.infer(a)
+        const inferred = propertyGenerator.infer(a)
         const sampled = fc.sample(inferred)
         expect(PropertyGenerator.isBoolean(sampled[0])).toBe(true)
       }),
