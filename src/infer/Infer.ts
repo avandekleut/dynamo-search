@@ -65,7 +65,10 @@ export class Infer {
       }
 
       if (obj.length === 1) {
-        return fc.array(this.infer(obj[0])) as fc.Arbitrary<T>
+        return fc.array(
+          this.infer(obj[0]),
+          this.config.arrayConstraints,
+        ) as fc.Arbitrary<T>
       }
 
       return fc.array(

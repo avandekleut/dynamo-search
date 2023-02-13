@@ -8,7 +8,8 @@ import { GenericFunction } from '../is/types'
  * representation. This class is used to test the outputs of the Infer class.
  */
 export class ArbitraryRepresentation {
-  constructor(private readonly is = new Is()) {}
+  private readonly is = new Is()
+  constructor(private readonly seed = 0) {}
 
   stringify(arbitrary: fc.Arbitrary<unknown>): string {
     const sample = this.sample(arbitrary)
@@ -47,8 +48,8 @@ export class ArbitraryRepresentation {
    * For array and record arbitraries, tries to replace the arbitraries
    * recursively with samples from those arbitraries.
    */
-  sample(arbitrary: fc.Arbitrary<unknown>, seed = 0): unknown {
-    const sampled = fc.sample(arbitrary, { seed })[0]
+  sample(arbitrary: fc.Arbitrary<unknown>): unknown {
+    const sampled = fc.sample(arbitrary, { seed: this.seed })[0]
     if (this.is.function(sampled)) {
       return this.sampleFunction(sampled)
     } else if (this.is.array(sampled)) {

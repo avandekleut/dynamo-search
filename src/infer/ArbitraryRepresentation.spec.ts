@@ -8,9 +8,8 @@ const arbitraryRepresentation = new ArbitraryRepresentation()
 describe('ArbitraryRepresentation for scalar arbitraries', () => {
   test('generating a sample is consistent', () => {
     for (const arbitraryFactory of arbitraryFactories) {
-      const arbitrary = arbitraryFactory()
-      expect(arbitraryRepresentation.sample(arbitrary)).toEqual(
-        arbitraryRepresentation.sample(arbitrary),
+      expect(arbitraryRepresentation.sample(arbitraryFactory())).toEqual(
+        arbitraryRepresentation.sample(arbitraryFactory()),
       )
     }
   })
@@ -36,17 +35,15 @@ describe('ArbitraryRepresentation for scalar arbitraries', () => {
 describe('ArbitraryRepresentation for array arbitraries', () => {
   test('generating a sample is consistent', () => {
     for (const arbitraryFactory of arbitraryFactories) {
-      const arbitrary = fc.array(arbitraryFactory())
-      expect(arbitraryRepresentation.sample(arbitrary)).toEqual(
-        arbitraryRepresentation.sample(arbitrary),
-      )
+      expect(
+        arbitraryRepresentation.sample(fc.array(arbitraryFactory())),
+      ).toEqual(arbitraryRepresentation.sample(fc.array(arbitraryFactory())))
     }
   })
 
   test('stringifying arbitraries makes them unique', () => {
     const stringified = arbitraryFactories.map((arbitraryFactory) => {
-      const arbitrary = fc.array(arbitraryFactory())
-      return arbitraryRepresentation.stringify(arbitrary)
+      return arbitraryRepresentation.stringify(fc.array(arbitraryFactory()))
     })
 
     expect(new Set(stringified).size).toEqual(stringified.length)
@@ -64,17 +61,19 @@ describe('ArbitraryRepresentation for array arbitraries', () => {
 describe('ArbitraryRepresentation for record arbitraries', () => {
   test('generating a sample is consistent', () => {
     for (const arbitraryFactory of arbitraryFactories) {
-      const arbitrary = fc.record({ foo: arbitraryFactory() })
-      expect(arbitraryRepresentation.sample(arbitrary)).toEqual(
-        arbitraryRepresentation.sample(arbitrary),
+      expect(
+        arbitraryRepresentation.sample(fc.record({ foo: arbitraryFactory() })),
+      ).toEqual(
+        arbitraryRepresentation.sample(fc.record({ foo: arbitraryFactory() })),
       )
     }
   })
 
   test('stringifying arbitraries makes them unique', () => {
     const converted = arbitraryFactories.map((arbitraryFactory) => {
-      const arbitrary = fc.record({ foo: arbitraryFactory() })
-      return arbitraryRepresentation.stringify(arbitrary)
+      return arbitraryRepresentation.stringify(
+        fc.record({ foo: arbitraryFactory() }),
+      )
     })
 
     expect(new Set(converted).size).toEqual(converted.length)
