@@ -1,15 +1,15 @@
 /* eslint-disable @typescript-eslint/explicit-function-return-type */
 import fc from 'fast-check'
-import { inferConfig } from './inferConfig'
+import { testingInferConfig } from './inferConfig'
 import { ArbitraryFactory } from './types'
 
-/** Arbitrary factories that produce samples that can be uniquely linked back to that arbitrary. */
-export const uniquelyInferrableArbitraryFactories: Array<ArbitraryFactory> = [
+/** Arbitrary factories that produce samples that can be linked back to that arbitrary. */
+export const invertibleArbitraryFactories: Array<ArbitraryFactory> = [
   fc.boolean,
   fc.bigInt,
   fc.date,
   () => fc.constant(null),
-  () => fc.constant(undefined),
+  // () => fc.constant(undefined), // This one doesn't play nicely with fc.array or fc.record
   fc.compareBooleanFunc,
   fc.compareFunc,
   fc.emailAddress,
@@ -23,14 +23,14 @@ export const uniquelyInferrableArbitraryFactories: Array<ArbitraryFactory> = [
 /** Arbitrary factories that produce samples that could have come from another arbitrary */
 export const ambiguousArbitraryFactories: Array<ArbitraryFactory> = [
   /* hex < base64 < ascii < unicode < string */
-  () => fc.hexaString(inferConfig.stringSharedConstraints),
-  () => fc.base64String(inferConfig.stringSharedConstraints),
-  () => fc.asciiString(inferConfig.stringSharedConstraints),
-  () => fc.unicodeString(inferConfig.stringSharedConstraints),
-  () => fc.string(inferConfig.stringSharedConstraints),
+  () => fc.hexaString(testingInferConfig.stringSharedConstraints),
+  () => fc.base64String(testingInferConfig.stringSharedConstraints),
+  () => fc.asciiString(testingInferConfig.stringSharedConstraints),
+  () => fc.unicodeString(testingInferConfig.stringSharedConstraints),
+  () => fc.string(testingInferConfig.stringSharedConstraints),
 
   /* json can include literals like "0" that are hard to disambiguate */
-  () => fc.json(inferConfig.jsonSharedConstraints),
+  () => fc.json(testingInferConfig.jsonSharedConstraints),
 
   /* nat < integer < double */
   fc.integer,
@@ -38,6 +38,6 @@ export const ambiguousArbitraryFactories: Array<ArbitraryFactory> = [
 ]
 
 export const arbitraryFactories = [
-  ...uniquelyInferrableArbitraryFactories,
+  ...invertibleArbitraryFactories,
   ...ambiguousArbitraryFactories,
 ]

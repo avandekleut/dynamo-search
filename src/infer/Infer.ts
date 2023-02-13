@@ -19,6 +19,8 @@ export class Infer {
       natConstraints: config?.natConstraints ?? {},
       integerConstraints: config?.integerConstraints ?? {},
       doubleConstraints: config?.doubleConstraints ?? {},
+      arrayConstraints: config?.arrayConstraints ?? {},
+      recordConstraints: config?.recordConstraints ?? {},
     }
     this.is = new Is({
       validateEmptyStrings: false,
@@ -58,17 +60,31 @@ export class Infer {
     }
 
     if (this.is.array(obj)) {
+      if (obj.length === 0) {
+        throw new Error(`Can't infer from empty array.`)
+      }
+
+      if (obj.length === 1) {
+        return fc.array(this.infer(obj[0])) as fc.Arbitrary<T>
+      }
+
       return fc.array(
         fc.oneof(...obj.map((item) => this.infer(item))),
+        this.config.arrayConstraints,
       ) as fc.Arbitrary<T>
     }
 
     if (this.is.record(obj)) {
       const result: Record<string, fc.Arbitrary<unknown>> = {}
-      for (const key of Object.keys(obj)) {
+      const keys = Object.keys(obj)
+      if (keys.length === 0) {
+        throw new Error(`Can't infer from empty record.`)
+      }
+
+      for (const key of keys) {
         result[key] = this.infer(obj[key])
       }
-      return fc.record(result) as fc.Arbitrary<T>
+      return fc.record(result, this.config.recordConstraints) as fc.Arbitrary<T>
     }
 
     throw new Error(`Failed to infer arbitrary for ${obj}`)

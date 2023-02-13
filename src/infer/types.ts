@@ -12,4 +12,6 @@ export type InferConfigInternal = {
   natConstraints: fc.NatConstraints
   integerConstraints: fc.IntegerConstraints
   doubleConstraints: fc.DoubleConstraints
+  arrayConstraints: fc.ArrayConstraints
+  recordConstraints: fc.RecordConstraints<any>
 }
