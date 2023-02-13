@@ -59,8 +59,6 @@ describe('Infer', () => {
   })
 
   test('infers arrays containing single invertible arbitraries', () => {
-    const invertibleArbitraryFactories = [fc.boolean]
-
     for (const arbitraryFactory of invertibleArbitraryFactories) {
       const arrayArbitrary = fc.array(
         arbitraryFactory(),
