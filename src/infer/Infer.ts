@@ -1,12 +1,14 @@
 import * as fc from 'fast-check'
 import { Is } from '../is'
 import { Func, GenericFunction } from '../is/types'
+import { ArbitraryRepresentation } from './ArbitraryRepresentation'
 
 import { InferConfig, InferConfigInternal } from './types'
 
 export class Infer {
   private readonly config: InferConfigInternal
   private readonly is: Is
+  private readonly rep = new ArbitraryRepresentation()
 
   constructor(config?: InferConfig) {
     this.config = {
@@ -64,15 +66,18 @@ export class Infer {
         throw new Error(`Can't infer from empty array.`)
       }
 
-      if (obj.length === 1) {
+      const uniqueInferred = this.getUniqueInferred(obj)
+
+      // if all same type, don't use oneof
+      if (uniqueInferred.length === 1) {
         return fc.array(
-          this.infer(obj[0]),
+          uniqueInferred[0],
           this.config.arrayConstraints,
         ) as fc.Arbitrary<T>
       }
 
       return fc.array(
-        fc.oneof(...obj.map((item) => this.infer(item))),
+        fc.oneof(...uniqueInferred),
         this.config.arrayConstraints,
       ) as fc.Arbitrary<T>
     }
@@ -91,6 +96,17 @@ export class Infer {
     }
 
     throw new Error(`Failed to infer arbitrary for ${obj}`)
+  }
+
+  private getUniqueInferred(obj: unknown[]): Array<fc.Arbitrary<unknown>> {
+    const inferred = obj.map((e) => this.infer(e))
+    const inferredRepresentations = inferred.map((e) => this.rep.stringify(e))
+    const uniqueMap: Record<string, fc.Arbitrary<unknown>> = {}
+    for (let i = 0; i < inferred.length; i++) {
+      uniqueMap[inferredRepresentations[i]] = inferred[i]
+    }
+    const uniqueInferred = Object.values(uniqueMap)
+    return uniqueInferred
   }
 
   inferFunction(obj: GenericFunction): fc.Arbitrary<GenericFunction> {
