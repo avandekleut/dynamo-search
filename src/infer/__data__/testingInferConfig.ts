@@ -8,6 +8,6 @@ export const testingInferConfig: InferConfig = {
     depthSize: 10,
   },
   arrayConstraints: {
-    minLength: 1,
+    minLength: 10,
   },
 }

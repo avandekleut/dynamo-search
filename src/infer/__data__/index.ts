@@ -1,3 +1,3 @@
 export * from './arbitraryFactories'
-export * from './inferConfig'
+export * from './testingInferConfig'
 export * from './types'

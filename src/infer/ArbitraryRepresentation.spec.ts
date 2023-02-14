@@ -1,11 +1,13 @@
 /* eslint-disable @typescript-eslint/explicit-function-return-type */
 import fc from 'fast-check'
 import { ArbitraryRepresentation } from './ArbitraryRepresentation'
-import { arbitraryFactories } from './__data__'
+import { arbitraryFactories, ArbitraryFactory } from './__data__'
 
 const arbitraryRepresentation = new ArbitraryRepresentation()
 
-describe('ArbitraryRepresentation for scalar arbitraries', () => {
+function runArbitraryRepresentationTests(
+  arbitraryFactories: Array<ArbitraryFactory>,
+): void {
   test('generating a sample is consistent', () => {
     for (const arbitraryFactory of arbitraryFactories) {
       expect(arbitraryRepresentation.sample(arbitraryFactory())).toEqual(
@@ -30,64 +32,65 @@ describe('ArbitraryRepresentation for scalar arbitraries', () => {
       )
     }
   })
+}
+
+describe('ArbitraryRepresentation for scalar arbitraries', () => {
+  runArbitraryRepresentationTests(arbitraryFactories)
 })
 
-describe('ArbitraryRepresentation for array arbitraries', () => {
-  test('generating a sample is consistent', () => {
-    for (const arbitraryFactory of arbitraryFactories) {
-      expect(
-        arbitraryRepresentation.sample(fc.array(arbitraryFactory())),
-      ).toEqual(arbitraryRepresentation.sample(fc.array(arbitraryFactory())))
-    }
-  })
-
-  test('stringifying arbitraries makes them unique', () => {
-    const stringified = arbitraryFactories.map((arbitraryFactory) => {
-      return arbitraryRepresentation.stringify(fc.array(arbitraryFactory()))
-    })
-
-    expect(new Set(stringified).size).toEqual(stringified.length)
-  })
-
-  test('stringification is independent of arbitrary instance', () => {
-    for (const arbitraryFactory of arbitraryFactories) {
-      expect(
-        arbitraryRepresentation.stringify(fc.array(arbitraryFactory())),
-      ).toEqual(arbitraryRepresentation.stringify(fc.array(arbitraryFactory())))
-    }
-  })
+describe('ArbitraryRepresentation for singleton array arbitraries', () => {
+  const singletonArrayArbitraries = arbitraryFactories.map(
+    (arbitraryFactory) => () => fc.array(arbitraryFactory()),
+  )
+  runArbitraryRepresentationTests(singletonArrayArbitraries)
 })
 
-describe('ArbitraryRepresentation for record arbitraries', () => {
-  test('generating a sample is consistent', () => {
-    for (const arbitraryFactory of arbitraryFactories) {
-      expect(
-        arbitraryRepresentation.sample(fc.record({ foo: arbitraryFactory() })),
-      ).toEqual(
-        arbitraryRepresentation.sample(fc.record({ foo: arbitraryFactory() })),
-      )
+describe('ArbitraryRepresentation for oneof array arbitraries', () => {
+  const oneofArrayArbitraryFactories: Array<ArbitraryFactory> = []
+  for (let i = 1; i < arbitraryFactories.length; i++) {
+    const oneofArrayArbitraryFactory = () =>
+      fc.oneof(arbitraryFactories[i - 1](), arbitraryFactories[i]())
+    oneofArrayArbitraryFactories.push(oneofArrayArbitraryFactory)
+  }
+
+  runArbitraryRepresentationTests(oneofArrayArbitraryFactories)
+})
+
+describe('ArbitraryRepresentation for singleton record arbitraries', () => {
+  const singletonArrayArbitraries = arbitraryFactories.map(
+    (arbitraryFactory) => () => fc.record({ foo: arbitraryFactory() }),
+  )
+  runArbitraryRepresentationTests(singletonArrayArbitraries)
+})
+
+// It turns out that this property isn't true so we shouldn't test it.
+// Alternatively, we could try to construct a single unique representation for
+// all equivalent arbitraries, but this is difficult.
+describe.skip('ArbitraryRepresentation oneof array arbitraries in different orders', () => {
+  test('using oneof in different orders results in the same arbitrary', () => {
+    const firstOneofArrayArbitraryFactories: Array<ArbitraryFactory> = []
+    for (let i = 1; i < arbitraryFactories.length; i++) {
+      const oneofArrayArbitraryFactory = () =>
+        fc.oneof(arbitraryFactories[i - 1](), arbitraryFactories[i]())
+      firstOneofArrayArbitraryFactories.push(oneofArrayArbitraryFactory)
     }
-  })
 
-  test('stringifying arbitraries makes them unique', () => {
-    const converted = arbitraryFactories.map((arbitraryFactory) => {
-      return arbitraryRepresentation.stringify(
-        fc.record({ foo: arbitraryFactory() }),
-      )
-    })
+    // oneof in opposite order arguments
+    const secondOneofArrayArbitraryFactories: Array<ArbitraryFactory> = []
+    for (let i = 1; i < arbitraryFactories.length; i++) {
+      const oneofArrayArbitraryFactory = () =>
+        fc.oneof(arbitraryFactories[i](), arbitraryFactories[i - 1]())
+      secondOneofArrayArbitraryFactories.push(oneofArrayArbitraryFactory)
+    }
 
-    expect(new Set(converted).size).toEqual(converted.length)
-  })
-
-  test('stringification is independent of arbitrary instance', () => {
-    for (const arbitraryFactory of arbitraryFactories) {
+    for (let i = 0; i < firstOneofArrayArbitraryFactories.length; i++) {
       expect(
         arbitraryRepresentation.stringify(
-          fc.record({ foo: arbitraryFactory() }),
+          firstOneofArrayArbitraryFactories[i](),
         ),
       ).toEqual(
         arbitraryRepresentation.stringify(
-          fc.record({ foo: arbitraryFactory() }),
+          secondOneofArrayArbitraryFactories[i](),
         ),
       )
     }

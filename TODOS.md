@@ -8,3 +8,4 @@
 - Infer:
   - add list of constants to preserve
   - add support for including arbitraries in structure
+  - add flag for whether to return all possible matches via fc.oneof

@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/explicit-function-return-type */
 import fc from 'fast-check'
-import { testingInferConfig } from './inferConfig'
+import { testingInferConfig } from './testingInferConfig'
 import { ArbitraryFactory } from './types'
 
 /** Arbitrary factories that produce samples that can be linked back to that arbitrary. */
