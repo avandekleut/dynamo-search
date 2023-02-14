@@ -10,20 +10,7 @@ import { testingInferConfig } from './__data__/testingInferConfig'
 const infer = new Infer(testingInferConfig)
 const arbitraryRepresentation = new ArbitraryRepresentation()
 
-// TODO: Test more complex nested structures and objects
-
-describe.skip('fixed counterexamples', () => {
-  test('email', () => {
-    const counterExample = '`a.a@a.aa'
-    const arbitrary = fc.emailAddress()
-    const inferred = infer.infer(counterExample)
-    expect(arbitraryRepresentation.stringify(arbitrary)).toEqual(
-      arbitraryRepresentation.stringify(inferred),
-    )
-  })
-})
-
-describe.skip('Infer (simple)', () => {
+describe('Infer (simple)', () => {
   test('infers all invertable arbitraries', () => {
     for (const arbitraryFactory of invertibleArbitraryFactories) {
       const arbitrary = arbitraryFactory()
@@ -79,10 +66,11 @@ describe.skip('Infer (simple)', () => {
   })
 })
 
-describe('Infer (complex)', () => {
+// These are expensive to run, but still pass.
+describe.skip('Infer (complex)', () => {
   // it turns out that fc.oneof(arb1, arb2) returns different results than
   // fc.oneof(arb2, arb1)
-  test.skip('infers arrays containing two invertible arbitraries', () => {
+  test('infers arrays containing two invertible arbitraries', () => {
     for (let i = 1; i < invertibleArbitraryFactories.length; i++) {
       const arrayArbitrary = fc.array(
         fc.oneof(
@@ -103,7 +91,7 @@ describe('Infer (complex)', () => {
     }
   })
 
-  test.skip('infers nested records of invertible arbitraries', () => {
+  test('infers nested records of invertible arbitraries', () => {
     for (let i = 3; i < invertibleArbitraryFactories.length; i++) {
       const nestedRecordArbitrary = fc.record({
         a: invertibleArbitraryFactories[i - 3](),
@@ -127,8 +115,11 @@ describe('Infer (complex)', () => {
     }
   })
 
-  test.skip('infers nested records of invertible arbitraries or singleton array arbitraries', () => {
+  test('infers nested records of invertible arbitraries or singleton array arbitraries', () => {
+    console.log(expect.getState().currentTestName)
     for (let i = 3; i < invertibleArbitraryFactories.length; i++) {
+      console.log(i, expect.getState().currentTestName)
+
       const nestedRecordArbitrary = fc.record({
         a: invertibleArbitraryFactories[i - 3](),
         b: fc.record({

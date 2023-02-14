@@ -9,7 +9,6 @@ export const invertibleArbitraryFactories: Array<ArbitraryFactory> = [
   fc.bigInt,
   fc.date,
   () => fc.constant(null),
-  // () => fc.constant(undefined), // This one doesn't play nicely with fc.array or fc.record
   fc.compareBooleanFunc,
   fc.compareFunc,
   fc.emailAddress,
