@@ -77,7 +77,7 @@ export class Infer {
       }
 
       return fc.array(
-        fc.oneof(...uniqueInferred),
+        fc.oneof(...obj.map((e) => this.infer(e))),
         this.config.arrayConstraints,
       ) as fc.Arbitrary<T>
     }

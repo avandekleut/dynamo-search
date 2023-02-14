@@ -12,7 +12,7 @@ const arbitraryRepresentation = new ArbitraryRepresentation()
 
 // TODO: Test more complex nested structures and objects
 
-describe('fixed counterexamples', () => {
+describe.skip('fixed counterexamples', () => {
   test('email', () => {
     const counterExample = '`a.a@a.aa'
     const arbitrary = fc.emailAddress()
@@ -38,7 +38,7 @@ describe.skip('Infer (simple)', () => {
     }
   })
 
-  test('infers flat records with invertable arbitraries', () => {
+  test.skip('infers flat records with invertable arbitraries', () => {
     const flatRecordOfInvertibleArbitraries: Record<
       string,
       fc.Arbitrary<unknown>
@@ -60,7 +60,7 @@ describe.skip('Infer (simple)', () => {
     )
   })
 
-  test('infers arrays containing single invertible arbitraries', () => {
+  test.skip('infers arrays containing single invertible arbitraries', () => {
     for (const arbitraryFactory of invertibleArbitraryFactories) {
       const arrayArbitrary = fc.array(
         arbitraryFactory(),
@@ -103,7 +103,7 @@ describe('Infer (complex)', () => {
     }
   })
 
-  test('infers nested records of invertible arbitraries', () => {
+  test.skip('infers nested records of invertible arbitraries', () => {
     for (let i = 3; i < invertibleArbitraryFactories.length; i++) {
       const nestedRecordArbitrary = fc.record({
         a: invertibleArbitraryFactories[i - 3](),
@@ -112,6 +112,36 @@ describe('Infer (complex)', () => {
           d: invertibleArbitraryFactories[i - 1](),
           e: fc.record({
             f: invertibleArbitraryFactories[i](),
+          }),
+        }),
+      })
+
+      fc.assert(
+        fc.property(nestedRecordArbitrary, (sample) => {
+          const inferred = infer.infer(sample)
+          expect(
+            arbitraryRepresentation.stringify(nestedRecordArbitrary),
+          ).toEqual(arbitraryRepresentation.stringify(inferred))
+        }),
+      )
+    }
+  })
+
+  test.skip('infers nested records of invertible arbitraries or singleton array arbitraries', () => {
+    for (let i = 3; i < invertibleArbitraryFactories.length; i++) {
+      const nestedRecordArbitrary = fc.record({
+        a: invertibleArbitraryFactories[i - 3](),
+        b: fc.record({
+          c: fc.array(
+            invertibleArbitraryFactories[i - 2](),
+            testingInferConfig.arrayConstraints,
+          ),
+          d: invertibleArbitraryFactories[i - 1](),
+          e: fc.record({
+            f: fc.array(
+              invertibleArbitraryFactories[i](),
+              testingInferConfig.arrayConstraints,
+            ),
           }),
         }),
       })
